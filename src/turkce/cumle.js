@@ -6,6 +6,7 @@
 //   2) Kalan uzun parçaları "yüklem + cümle başı bağlacı" desenine göre böl
 
 import { kelimeSadele, trKucuk } from './harf.js';
+import { arapcaMi } from './islami.js';
 import {
   KISALTMALAR,
   CUMLE_BASI_BAGLAC,
@@ -161,7 +162,10 @@ export function cumleleriAyir(metin = '', secenekler = {}) {
       const parca = korumayiAc(ham).trim();
       if (!parca) continue;
       const noktalamasiz = !/[.!?…]\s*$/.test(parca);
-      const bolunecek = noktalamasiz || parca.split(/\s+/).length > uzunlukEsigi * 1.5;
+      // Arapça ibare tek parça kalır; Türkçe yüklem/bağlaç sezgisi orada geçersiz.
+      const bolunecek =
+        !arapcaMi(parca) &&
+        (noktalamasiz || parca.split(/\s+/).length > uzunlukEsigi * 1.5);
       const altParcalar = bolunecek
         ? baglacaGoreBol(parca, enAzKelime, uzunlukEsigi)
         : [parca];

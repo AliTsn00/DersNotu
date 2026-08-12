@@ -1,7 +1,7 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 
 import { notCikar } from './turkce/index.js';
-import { ORNEK_DERS } from './ornek.js';
+import { duzenlemeyeAl, yeniMaddeleriKat } from './turkce/duzenle.js';
 import { Dinleyici, konusmaTanimaVarMi } from './core/dinleme.js';
 import { sesiYaziyaCevir } from './core/kayitci.js';
 import { ekraniAcikTut, ekranKilidiniBirak, ekranKilidiniIzle } from './core/ekran.js';
@@ -43,6 +43,9 @@ export default function App() {
   const [cevriliyor, cevriliyorAyarla] = useState(false);
   const [dersler, derslerAyarla] = useState([]);
   const [aktifId, aktifIdAyarla] = useState(null);
+  // Elle düzenlenmiş not; doluysa otomatik notun yerine o gösterilir.
+  const [elleNot, elleNotAyarla] = useState(null);
+  const [duzenleniyor, duzenleniyorAyarla] = useState(false);
 
   const dinleyiciRef = useRef(null);
   const baslangicRef = useRef(0);
@@ -51,7 +54,7 @@ export default function App() {
   // --- Not üretimi ---------------------------------------------------------
   // Konuşma sürerken her kelimede yeniden hesaplamamak için ertelenmiş değer.
   const ertelenmisMetin = useDeferredValue(hamMetin);
-  const not = useMemo(() => {
+  const otomatikNot = useMemo(() => {
     if (!ertelenmisMetin.trim()) return null;
     return notCikar(ertelenmisMetin, {
       detay: ayarlar.detay,
@@ -59,6 +62,15 @@ export default function App() {
       sure,
     });
   }, [ertelenmisMetin, ayarlar.detay, ayarlar.dolguTemizle, sure]);
+
+  // Düzenlenmiş bir not varken ders sürüyorsa, yeni cümleler ona eklenir;
+  // kullanıcının düzenlemeleri kaybolmaz.
+  useEffect(() => {
+    if (!elleNot || !otomatikNot) return;
+    elleNotAyarla((onceki) => (onceki ? yeniMaddeleriKat(onceki, otomatikNot) : onceki));
+  }, [otomatikNot, elleNot]);
+
+  const not = elleNot || otomatikNot;
 
   // --- Ayar kalıcılığı -----------------------------------------------------
   const ayarGuncelle = useCallback((yeni) => {
@@ -173,13 +185,17 @@ export default function App() {
     sureAyarla(0);
     baslangicRef.current = 0;
     aktifIdAyarla(null);
+    elleNotAyarla(null);
+    duzenleniyorAyarla(false);
     hataAyarla('');
   }, [dinlemeyiDurdur]);
 
-  const ornekYukle = useCallback(() => {
-    hamMetinAyarla(ORNEK_DERS);
-    sureAyarla(2400);
+  const ornekYukle = useCallback((ornek) => {
+    hamMetinAyarla(ornek.metin);
+    sureAyarla(ornek.sure || 0);
     aktifIdAyarla(null);
+    elleNotAyarla(null);
+    duzenleniyorAyarla(false);
     sekmeAyarla('not');
   }, []);
 
@@ -194,10 +210,13 @@ export default function App() {
       hamMetin,
       detay: ayarlar.detay,
       maddeSayisi: not.istatistik.madde,
+      // Elle düzenlenmiş not olduğu gibi saklanır; ham metinden yeniden
+      // üretilirse kullanıcının değişiklikleri kaybolurdu.
+      elleNot: elleNot || null,
     });
     aktifIdAyarla(id);
     arsiviTazele();
-  }, [not, aktifId, sure, hamMetin, ayarlar.detay, arsiviTazele]);
+  }, [not, elleNot, aktifId, sure, hamMetin, ayarlar.detay, arsiviTazele]);
 
   const arsivAc = useCallback(
     (ders) => {
@@ -205,10 +224,24 @@ export default function App() {
       hamMetinAyarla(ders.hamMetin);
       sureAyarla(ders.sure || 0);
       aktifIdAyarla(ders.id);
+      elleNotAyarla(ders.elleNot || null);
+      duzenleniyorAyarla(false);
       sekmeAyarla('not');
     },
     [dinlemeyiDurdur],
   );
+
+  // --- Düzenleme -----------------------------------------------------------
+  const duzenlemeyiAc = useCallback(() => {
+    if (!elleNot && otomatikNot) elleNotAyarla(duzenlemeyeAl(otomatikNot));
+    duzenleniyorAyarla(true);
+    sekmeAyarla('not');
+  }, [elleNot, otomatikNot]);
+
+  const otomatigeDon = useCallback(() => {
+    elleNotAyarla(null);
+    duzenleniyorAyarla(false);
+  }, []);
 
   const arsivSil = useCallback(
     async (id) => {
@@ -304,6 +337,11 @@ export default function App() {
             detayDegistir={(detay) => ayarGuncelle({ ...ayarlar, detay })}
             kaydet={kaydet}
             kayitliMi={Boolean(aktifId)}
+            duzenleniyor={duzenleniyor}
+            duzenlemeyiAc={duzenlemeyiAc}
+            duzenlemeyiKapat={() => duzenleniyorAyarla(false)}
+            otomatigeDon={otomatigeDon}
+            notuDegistir={elleNotAyarla}
           />
         ) : null}
 

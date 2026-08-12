@@ -3,6 +3,7 @@
 
 import { basHarfiBuyut, kelimeSadele, kelimelere } from './harf.js';
 import { SORU_KELIMELERI, SORU_EKI, CUMLE_BASI_BAGLAC } from './sozluk.js';
+import { arapcaMi, ozelAdlariBuyut } from './islami.js';
 
 /** Soru kelimesini soru olmaktan çıkaran yapılar (yan cümle belirteçleri). */
 const SORUYU_BOZAN = new Set([
@@ -47,10 +48,14 @@ function baglacVirgulu(cumle) {
 export function cumleyiBicimle(cumle = '') {
   let metin = String(cumle).trim().replace(/[\s,;:]+$/, '');
   if (!metin) return '';
+  // Arapça ibareye Türkçe noktalama/baş harf kuralları uygulanmaz.
+  if (arapcaMi(metin)) return metin;
 
   const soru = soruMu(metin);
   metin = metin.replace(/[.!?…]+$/, '');
   metin = baglacVirgulu(metin);
+  // Konuşma tanıma "allah", "kuran" gibi özel adları küçük yazar.
+  metin = ozelAdlariBuyut(metin);
   metin = basHarfiBuyut(metin);
   return metin + (soru ? '?' : '.');
 }

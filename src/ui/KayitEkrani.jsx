@@ -1,6 +1,7 @@
 // Ders yakalama ekranı: canlı dinleme, ses dosyası veya metin yapıştırma.
 
 import { sureYaz } from '../turkce/bicim.js';
+import { ORNEK_DERSLER } from '../ornek.js';
 import { Dugme, Kart, BosDurum, girdiSinifi } from './parcalar.jsx';
 
 const MODLAR = [
@@ -172,9 +173,18 @@ export default function KayitEkrani({
             placeholder="Ders metnini buraya yapıştırın…"
             className={`${girdiSinifi} resize-y font-mono text-[13px] leading-relaxed`}
           />
-          <Dugme cesit="sade" boyut="kucuk" onClick={ornekYukle}>
-            Örnek ders metnini dene
-          </Dugme>
+          <div className="flex flex-wrap gap-1.5">
+            {ORNEK_DERSLER.map((ornek) => (
+              <Dugme
+                key={ornek.id}
+                cesit="sade"
+                boyut="kucuk"
+                onClick={() => ornekYukle(ornek)}
+              >
+                {ornek.ad}
+              </Dugme>
+            ))}
+          </div>
         </Kart>
       ) : null}
 

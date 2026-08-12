@@ -11,6 +11,7 @@ import {
   SIRA_SIFATLARI,
 } from './sozluk.js';
 import { soruMu } from './noktalama.js';
+import { islamiTur } from './islami.js';
 
 const derlenmis = Object.fromEntries(
   Object.entries(IPUCU_KALIPLARI).map(([tur, kaliplar]) => [
@@ -27,6 +28,13 @@ const FIILIMSI = /(ması|mesi|masına|mesine|masını|mesini|maya|meye|mak|mek|m
 const fiilimsiMi = (kelime = '') => {
   const sade = kelimeSadele(kelime);
   return sade.length >= 5 && FIILIMSI.test(sade);
+};
+
+// Tamlayan (ilgi) eki — "insanın", "dersin", "kitabın".
+const TAMLAYAN = /(nın|nin|nun|nün|ın|in|un|ün)$/u;
+const tamlayanMi = (kelime = '') => {
+  const sade = kelimeSadele(kelime);
+  return sade.length >= 5 && TAMLAYAN.test(sade);
 };
 
 // "...besin üretmesine denir" açıklaması tek başına kaldığında yönelme eki
@@ -123,6 +131,9 @@ export function tanimCikar(cumle = '') {
 
     // Terim, cümle başı bağlacından ibaretse tanım sayma.
     if (!terim || CUMLE_BASI_BAGLAC.includes(trKucuk(terim))) continue;
+    // Tamlayan eki taşıyan kelime terim olamaz: "insanın kendini tutabilmesi
+    // demektir" cümlesinde tanımlanan şey "insan" değildir.
+    if (tamlayanMi(terim.split(/\s+/).pop())) continue;
     if (terim.split(/\s+/).length > 4) continue;
     if (!aciklama || aciklama.split(/\s+/).length < 2) continue;
     if (terimSonda) aciklama = yonelmeyiBildirmeYap(aciklama);
@@ -153,7 +164,12 @@ export function cumleyiSiniflandir(cumle = '') {
   const sade = trKucuk(metin).replace(/[.!?…]+$/, '');
   if (!kelimelere(metin).length) return { tur: 'gereksiz', metin };
 
-  // Önce güçlü içerik ipuçları: "Günaydın, bugün fotosentezi işleyeceğiz."
+  // Dini alıntılar her şeyden önce gelir: bir ayet ya da hadis, içinde
+  // "önemli" veya "örneğin" geçse bile ayet/hadis olarak kalmalıdır.
+  const islami = islamiTur(metin);
+  if (islami) return { ...islami, metin };
+
+  // Sonra güçlü içerik ipuçları: "Günaydın, bugün fotosentezi işleyeceğiz."
   // cümlesi selamlama içerse de bir başlıktır.
   const tanim = tanimCikar(metin);
   if (tanim) return { tur: 'tanim', metin, tanim };

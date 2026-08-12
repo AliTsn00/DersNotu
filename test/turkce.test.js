@@ -8,6 +8,10 @@ import { govdele, anahtarKavramlar } from '../src/turkce/anahtar.js';
 import { notCikar } from '../src/turkce/index.js';
 import { markdownYaz } from '../src/turkce/bicim.js';
 
+/** Nottaki bütün maddeleri (bölüm → grup → madde) düz listeye indirir. */
+const tumMaddeler = (not) =>
+  not.bolumler.flatMap((bolum) => bolum.gruplar.flatMap((grup) => grup.maddeler));
+
 describe('Türkçe harf dönüşümleri', () => {
   it('I/İ çiftini doğru çevirir', () => {
     expect(trKucuk('IŞIK')).toBe('ışık');
@@ -168,20 +172,23 @@ describe('Uçtan uca not çıkarımı', () => {
   });
 
   it('liste öğelerini alt maddeye yerleştirir', () => {
-    const liste = not.bolumler
-      .flatMap((b) => b.maddeler)
-      .find((m) => m.tur === 'listeBasi');
+    const liste = tumMaddeler(not).find((m) => m.tur === 'listeBasi');
     expect(liste).toBeDefined();
     expect(liste.alt.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('bölümleri ve maddeleri numaralandırır', () => {
+    expect(not.bolumler[0].numara).toBe('1');
+    expect(tumMaddeler(not)[0].numara).toBe('1.1');
   });
 
   it('önemli, örnek, soru ve özeti ayırır', () => {
     expect(not.onemliler.length).toBe(1);
     expect(not.ozet.length).toBe(1);
     expect(not.sorular.length).toBe(1);
-    expect(
-      not.bolumler.flatMap((b) => b.maddeler).flatMap((m) => m.alt),
-    ).toContainEqual(expect.objectContaining({ tur: 'ornek' }));
+    expect(tumMaddeler(not).flatMap((m) => m.alt)).toContainEqual(
+      expect.objectContaining({ tur: 'ornek' }),
+    );
   });
 
   it('sınıf yönetimi cümlelerini nota almaz', () => {

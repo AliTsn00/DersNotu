@@ -13,6 +13,7 @@ import { metniTemizle } from './temizle.js';
 import { cumleleriAyir } from './cumle.js';
 import { cumleyiBicimle } from './noktalama.js';
 import { cumleyiSiniflandir } from './siniflandir.js';
+import { alintilariIsaretle } from './islami.js';
 import { taslakKur } from './taslak.js';
 
 /**
@@ -26,7 +27,9 @@ export function notCikar(hamMetin = '', secenekler = {}) {
   const temiz = metniTemizle(hamMetin, { dolgu: dolguTemizle });
   const cumleler = cumleleriAyir(temiz);
   const bicimli = cumleler.map(cumleyiBicimle).filter(Boolean);
-  const siniflar = bicimli.map(cumleyiSiniflandir);
+  // "Allah Teâlâ buyuruyor ki:" gibi haberciler, ardındaki cümleyi alıntıya
+  // çevirir; bu yüzden sınıflandırma tek cümlelik değil, iki geçişlidir.
+  const siniflar = alintilariIsaretle(bicimli.map(cumleyiSiniflandir));
 
   return taslakKur(siniflar, secenekler);
 }
@@ -38,3 +41,13 @@ export { cumleyiSiniflandir, tanimCikar, baslikCikar } from './siniflandir.js';
 export { taslakKur } from './taslak.js';
 export { anahtarKavramlar, govdele } from './anahtar.js';
 export { markdownYaz, duzMetinYaz, tarihYaz, sureYaz } from './bicim.js';
+export {
+  arapcaMi,
+  cevrimyaziMi,
+  islamiTur,
+  ayetKaynagi,
+  hadisKaynagi,
+  alintilariIsaretle,
+  dogrulamaUyarisiGerekliMi,
+  DOGRULAMA_UYARISI,
+} from './islami.js';

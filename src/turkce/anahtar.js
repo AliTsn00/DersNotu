@@ -6,6 +6,8 @@ import { ETKISIZ_KELIMELER, DOLGU_SOZCUKLER } from './sozluk.js';
 
 // Uzundan kısaya sıralı çekim ekleri.
 const CEKIM_EKLERI = [
+  // bildirme (ek fiil) ekleri: "sabırdır" ile "sabır" aynı kavram sayılsın
+  'dır', 'dir', 'dur', 'dür', 'tır', 'tir', 'tur', 'tür',
   'larından', 'lerinden', 'larının', 'lerinin', 'larında', 'lerinde',
   'larıyla', 'leriyle', 'lardan', 'lerden', 'ların', 'lerin', 'larda',
   'lerde', 'ları', 'leri', 'lar', 'ler',

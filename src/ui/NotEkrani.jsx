@@ -1,4 +1,4 @@
-// Üretilen notu gösteren ve dışa aktaran ekran.
+// Üretilen notu gösteren, düzenleyen ve dışa aktaran ekran.
 
 import { useState } from 'react';
 import { markdownYaz, duzMetinYaz } from '../turkce/bicim.js';
@@ -8,7 +8,9 @@ import {
   panoyaKopyala,
   pdfOlarakYazdir,
 } from '../core/disaAktar.js';
+import { wordIndir } from '../core/word.js';
 import NotGovdesi from './NotGovdesi.jsx';
+import NotDuzenleyici from './NotDuzenleyici.jsx';
 import { Dugme, Kart, BosDurum } from './parcalar.jsx';
 
 const DETAY_SECENEKLERI = [
@@ -17,7 +19,18 @@ const DETAY_SECENEKLERI = [
   { id: 'detayli', ad: 'Detaylı' },
 ];
 
-export default function NotEkrani({ not, detay, detayDegistir, kaydet, kayitliMi }) {
+export default function NotEkrani({
+  not,
+  detay,
+  detayDegistir,
+  kaydet,
+  kayitliMi,
+  duzenleniyor,
+  duzenlemeyiAc,
+  duzenlemeyiKapat,
+  otomatigeDon,
+  notuDegistir,
+}) {
   const [bildirim, bildirimYaz] = useState('');
 
   const bildir = (mesaj) => {
@@ -39,29 +52,51 @@ export default function NotEkrani({ not, detay, detayDegistir, kaydet, kayitliMi
   return (
     <div className="space-y-4">
       <Kart className="flex flex-wrap items-center gap-2">
-        <div
-          role="group"
-          aria-label="Ayrıntı seviyesi"
-          className="flex rounded-xl bg-zinc-100 p-0.5 dark:bg-zinc-800"
-        >
-          {DETAY_SECENEKLERI.map((secenek) => (
+        {not.elleDuzenlendi ? (
+          <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+            <span className="rounded-full bg-indigo-50 px-2 py-0.5 font-medium text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
+              Elle düzenlendi
+            </span>
             <button
-              key={secenek.id}
               type="button"
-              onClick={() => detayDegistir(secenek.id)}
-              aria-pressed={detay === secenek.id}
-              className={`rounded-[10px] px-3 py-1.5 text-xs font-medium transition-colors ${
-                detay === secenek.id
-                  ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-950 dark:text-zinc-50'
-                  : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400'
-              }`}
+              onClick={otomatigeDon}
+              className="min-h-0 underline underline-offset-2 hover:text-zinc-800 dark:hover:text-zinc-100"
             >
-              {secenek.ad}
+              Otomatiğe dön
             </button>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div
+            role="group"
+            aria-label="Ayrıntı seviyesi"
+            className="flex rounded-xl bg-zinc-100 p-0.5 dark:bg-zinc-800"
+          >
+            {DETAY_SECENEKLERI.map((secenek) => (
+              <button
+                key={secenek.id}
+                type="button"
+                onClick={() => detayDegistir(secenek.id)}
+                aria-pressed={detay === secenek.id}
+                className={`min-h-0 rounded-[10px] px-3 py-1.5 text-xs font-medium transition-colors ${
+                  detay === secenek.id
+                    ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-950 dark:text-zinc-50'
+                    : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400'
+                }`}
+              >
+                {secenek.ad}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="ml-auto flex flex-wrap gap-1.5">
+          <Dugme
+            cesit={duzenleniyor ? 'ana' : 'sade'}
+            boyut="kucuk"
+            onClick={duzenleniyor ? duzenlemeyiKapat : duzenlemeyiAc}
+          >
+            {duzenleniyor ? 'Düzenlemeyi bitir' : 'Düzenle'}
+          </Dugme>
           <Dugme
             boyut="kucuk"
             onClick={async () => {
@@ -74,11 +109,14 @@ export default function NotEkrani({ not, detay, detayDegistir, kaydet, kayitliMi
           <Dugme
             boyut="kucuk"
             onClick={async () => {
-              const oldu = await panoyaKopyala(markdownYaz(not));
-              bildir(oldu ? 'Markdown kopyalandı.' : 'Kopyalanamadı.');
+              try {
+                await wordIndir(not);
+              } catch {
+                bildir('Word belgesi oluşturulamadı.');
+              }
             }}
           >
-            Markdown
+            Word
           </Dugme>
           <Dugme boyut="kucuk" onClick={() => markdownIndir(not)}>
             .md
@@ -107,20 +145,21 @@ export default function NotEkrani({ not, detay, detayDegistir, kaydet, kayitliMi
         </div>
 
         {bildirim ? (
-          <p
-            role="status"
-            className="w-full text-xs text-emerald-600 dark:text-emerald-400"
-          >
+          <p role="status" className="w-full text-xs text-emerald-600 dark:text-emerald-400">
             {bildirim}
           </p>
         ) : null}
       </Kart>
 
-      <Kart className="p-5 sm:p-7">
-        <NotGovdesi not={not} />
-      </Kart>
+      {duzenleniyor ? (
+        <NotDuzenleyici not={not} degistir={notuDegistir} />
+      ) : (
+        <Kart className="p-5 sm:p-7">
+          <NotGovdesi not={not} />
+        </Kart>
+      )}
 
-      {not.atlanan.length ? (
+      {!duzenleniyor && not.atlanan?.length ? (
         <details className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm dark:border-zinc-800 dark:bg-zinc-900">
           <summary className="cursor-pointer font-medium text-zinc-700 dark:text-zinc-200">
             Nota alınmayan {not.atlanan.length} cümle

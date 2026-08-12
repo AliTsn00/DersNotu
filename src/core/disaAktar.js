@@ -62,8 +62,10 @@ export function pdfOlarakYazdir(not) {
           .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
           .replace(/`(.+?)`/g, '<code>$1</code>');
 
-      if (satir.startsWith('# ')) return `<h1>${zengin(satir.slice(2))}</h1>`;
+      if (satir.startsWith('### ')) return `<h3>${zengin(satir.slice(4))}</h3>`;
       if (satir.startsWith('## ')) return `<h2>${zengin(satir.slice(3))}</h2>`;
+      if (satir.startsWith('# ')) return `<h1>${zengin(satir.slice(2))}</h1>`;
+      if (satir.startsWith('> ')) return `<p class="uyari">${zengin(satir.slice(2))}</p>`;
       if (/^\s*\d+\.\s/.test(satir)) {
         return `<div class="madde alt">${zengin(satir.trim())}</div>`;
       }
@@ -87,6 +89,10 @@ export function pdfOlarakYazdir(not) {
   body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; color: #18181b; line-height: 1.55; }
   h1 { font-size: 22pt; margin: 0 0 4px; }
   h2 { font-size: 14pt; margin: 22px 0 8px; border-bottom: 1px solid #e4e4e7; padding-bottom: 4px; }
+  h3 { font-size: 11pt; margin: 14px 0 6px; color: #52525b; text-transform: uppercase; letter-spacing: .04em; }
+  .uyari { border-left: 3px solid #f59e0b; background: #fffbeb; padding: 6px 10px; color: #92400e; font-size: 9.5pt; }
+  [dir="rtl"], .arapca { direction: rtl; text-align: right; font-size: 15pt; line-height: 2;
+    font-family: "Traditional Arabic", "Amiri", "Scheherazade New", serif; }
   .ustbilgi { color: #71717a; font-size: 10pt; margin: 0 0 18px; }
   .madde { margin: 4px 0; }
   .madde.alt { margin-left: 22px; color: #3f3f46; }
