@@ -50,6 +50,14 @@ export default function App() {
   const dinleyiciRef = useRef(null);
   const baslangicRef = useRef(0);
   const canliDestekli = useMemo(() => konusmaTanimaVarMi(), []);
+  // Çerçeve (iframe) içinde açıldığında tarayıcı mikrofon izni sormaz.
+  const cerceveIcinde = useMemo(() => {
+    try {
+      return window.self !== window.top;
+    } catch {
+      return true;
+    }
+  }, []);
 
   // --- Not üretimi ---------------------------------------------------------
   // Konuşma sürerken her kelimede yeniden hesaplamamak için ertelenmiş değer.
@@ -127,7 +135,15 @@ export default function App() {
         hamMetinAyarla((onceki) => (onceki ? `${onceki}\n${metin}` : metin));
         araMetinAyarla('');
       },
-      onDurum: durumAyarla,
+      onDurum: (yeniDurum) => {
+        durumAyarla(yeniDurum);
+        // Mikrofon izni reddedilirse tanıma kendini kapatır; sayaç ve
+        // "Kayıtta" göstergesi de durmalı.
+        if (yeniDurum === 'durdu') {
+          dinliyorAyarla(false);
+          araMetinAyarla('');
+        }
+      },
       onHata: hataAyarla,
     });
 
@@ -325,6 +341,7 @@ export default function App() {
             cevriliyor={cevriliyor}
             hata={hata}
             canliDestekli={canliDestekli}
+            cerceveIcinde={cerceveIcinde}
             ornekYukle={ornekYukle}
             temizle={temizle}
           />

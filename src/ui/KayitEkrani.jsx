@@ -63,6 +63,7 @@ export default function KayitEkrani({
   cevriliyor,
   hata,
   canliDestekli,
+  cerceveIcinde,
   ornekYukle,
   temizle,
 }) {
@@ -106,6 +107,20 @@ export default function KayitEkrani({
             <p className="mx-4 rounded-xl bg-amber-50 px-3 py-2 text-center text-sm text-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
               Bu tarayıcı canlı konuşma tanımayı desteklemiyor (iPhone/Safari dahil).
               Dersi <strong>Ses dosyası</strong> sekmesinden yükleyebilirsiniz.
+            </p>
+          ) : null}
+
+          {canliDestekli && cerceveIcinde ? (
+            <p className="mx-4 rounded-xl bg-amber-50 px-3 py-2 text-center text-sm text-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
+              Sayfa bir çerçeve içinde açık; tarayıcı bu durumda mikrofon izni sormaz.
+              Canlı dinleme için uygulamayı <strong>kendi sekmesinde</strong> açın.{' '}
+              <button
+                type="button"
+                onClick={() => window.open(window.location.href, '_blank', 'noopener')}
+                className="min-h-0 underline underline-offset-2"
+              >
+                Yeni sekmede aç
+              </button>
             </p>
           ) : null}
 
