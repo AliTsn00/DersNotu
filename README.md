@@ -1,0 +1,2 @@
+# DersNotu
+Sesi nota dönüştürür
