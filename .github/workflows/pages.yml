@@ -1,0 +1,54 @@
+# Uygulamayı GitHub Pages'e yayınlar.
+#
+# Kurulum: repo → Settings → Pages → Source: "GitHub Actions" seçin.
+# Yayınlandıktan sonra adres: https://<kullanıcı>.github.io/<repo>/
+# Mikrofon https gerektirdiği için telefonda test bu adresten yapılır.
+
+name: Pages
+
+on:
+  push:
+    branches: [main, claude/lecture-audio-notes-app-kkskgk]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  kur:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm test
+
+      - name: Derle
+        # Pages alt yolda sunar: /<repo>/
+        run: PAGES_BASE="/${GITHUB_REPOSITORY#*/}/" npm run build
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  yayinla:
+    needs: kur
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.yayin.outputs.page_url }}
+    steps:
+      - id: yayin
+        uses: actions/deploy-pages@v4

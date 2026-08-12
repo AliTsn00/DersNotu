@@ -7,12 +7,23 @@ html {
 
 body {
   margin: 0;
+  /* Aşırı kaydırmada ve gömülü görüntülemede altta beyaz şerit kalmasın:
+     zemin rengi uygulama gövdesiyle aynı (zinc-50 / zinc-950). */
+  background: #fafafa;
+  color: #18181b;
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
     Arial, sans-serif;
   /* iPhone'da çentik/alt çubuk altında içerik kalmasın */
   padding: env(safe-area-inset-top) env(safe-area-inset-right)
     env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #09090b;
+    color: #fafafa;
+  }
 }
 
 /* Arapça ibareler: sağdan sola, geniş satır aralığı, uygun yazı tipi */

@@ -136,8 +136,13 @@ export default function NotEkrani({
             cesit="ana"
             boyut="kucuk"
             onClick={async () => {
-              await kaydet();
-              bildir('Ders arşive kaydedildi.');
+              try {
+                await kaydet();
+                bildir('Ders arşive kaydedildi.');
+              } catch {
+                // Gizli sekme ya da depolama izni kapalıysa IndexedDB açılmaz.
+                bildir('Kaydedilemedi: tarayıcı yerel depolamaya izin vermiyor.');
+              }
             }}
           >
             {kayitliMi ? 'Güncelle' : 'Kaydet'}

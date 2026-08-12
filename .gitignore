@@ -9,3 +9,4 @@ dev-dist
 .idea
 npm-debug.log*
 yarn-error.log*
+dist-tek

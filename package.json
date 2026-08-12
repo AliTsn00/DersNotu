@@ -15,6 +15,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:tek": "vite build --config vite.tekdosya.config.js && node scripts/tek-dosya.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

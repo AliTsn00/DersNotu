@@ -3,7 +3,12 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
+// GitHub Pages alt yolda yayınlanır (örn. /DersNotu/). Yayın iş akışı
+// PAGES_BASE değişkenini geçirir; yerel geliştirmede kök kullanılır.
+const temelYol = process.env.PAGES_BASE || '/';
+
 export default defineConfig({
+  base: temelYol,
   plugins: [
     react(),
     tailwindcss(),
@@ -18,8 +23,8 @@ export default defineConfig({
           'Derste hocanın sesini dinleyip Türkçe cümle yapısına göre maddeli ders notu çıkarır.',
         lang: 'tr',
         dir: 'ltr',
-        start_url: '/',
-        scope: '/',
+        start_url: temelYol,
+        scope: temelYol,
         display: 'standalone',
         orientation: 'portrait-primary',
         background_color: '#fafafa',
