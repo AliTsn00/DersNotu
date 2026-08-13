@@ -296,7 +296,9 @@ export default function App() {
   );
 
   // --- Yapay zekâ ile not ---------------------------------------------------
-  const zekaHazir = Boolean(ayarlar.zekaHesap && ayarlar.zekaAnahtari);
+  // Aracı da zorunlu: onsuz istek tarayıcıda CORS'a takılır, düğme her
+  // basışta hata verirdi.
+  const zekaHazir = Boolean(ayarlar.zekaHesap && ayarlar.zekaAnahtari && ayarlar.zekaAraci);
 
   const zekayiIptalEt = useCallback(() => {
     zekaRef.current?.abort();
@@ -314,6 +316,7 @@ export default function App() {
         hesapKimligi: ayarlar.zekaHesap,
         anahtar: ayarlar.zekaAnahtari,
         model: ayarlar.zekaModel,
+        araci: ayarlar.zekaAraci,
         detay: ayarlar.detay,
         sure,
         isaret: durdurucu.signal,

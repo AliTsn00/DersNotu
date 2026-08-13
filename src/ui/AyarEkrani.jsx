@@ -212,6 +212,21 @@ export default function AyarEkrani({ ayarlar, guncelle }) {
             {ZEKA_MODELLERI[ayarlar.zekaModel]?.aciklama}
           </p>
         </Alan>
+
+        <Alan
+          etiket="Aracı adresi (zorunlu)"
+          aciklama="Cloudflare tarayıcıdan doğrudan çağrılamıyor. Kendi hesabınızda ücretsiz bir Worker kurulur; kurulumu depoda worker/KURULUM.md dosyasında."
+        >
+          <input
+            type="url"
+            value={ayarlar.zekaAraci}
+            onChange={(olay) => ayarla('zekaAraci')(olay.target.value.trim())}
+            placeholder="https://ders-notu-araci.hesabiniz.workers.dev"
+            autoComplete="off"
+            spellCheck={false}
+            className={girdiSinifi}
+          />
+        </Alan>
       </Kart>
 
       <Kart className="space-y-2">

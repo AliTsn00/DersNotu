@@ -93,6 +93,9 @@ export const VARSAYILAN_AYARLAR = {
   zekaHesap: '',
   zekaAnahtari: '',
   zekaModel: 'llama-3.3-70b',
+  // Cloudflare'in API'si tarayıcıdan doğrudan çağrılamıyor (CORS); istekler
+  // kullanıcının kendi hesabındaki ücretsiz Worker aracısına gider.
+  zekaAraci: '',
 };
 
 export function ayarlariOku() {

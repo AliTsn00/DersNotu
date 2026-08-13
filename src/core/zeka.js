@@ -11,7 +11,11 @@
 import { hazirlikYap, notuDenetle, notuTamamla, caprazDogrula } from '../turkce/llm.js';
 import { notCikar } from '../turkce/index.js';
 
-const UC_NOKTA = 'https://api.cloudflare.com/client/v4/accounts';
+// Cloudflare'in kendi API'si tarayıcıdan çağrılamıyor: ön kontrol (OPTIONS)
+// isteğine 405 dönüyor ve CORS başlığı göndermiyor. Bu yüzden istekler
+// kullanıcının kendi hesabındaki ücretsiz Worker aracısına gider (worker/).
+// Doğrudan adres yalnızca tarayıcı dışı kullanım için yedekte durur.
+const DOGRUDAN_UC = 'https://api.cloudflare.com/client/v4';
 
 /** Hazır model seçenekleri. Türkçe başarımına göre sıralı. */
 export const ZEKA_MODELLERI = {
@@ -106,11 +110,12 @@ function jsonAyikla(ham) {
 
 /** Cloudflare Workers AI'ye bir sohbet isteği gönderir. */
 async function modeliCagir(ayarlar, mesajlar, isaret) {
-  const { hesapKimligi, anahtar, model = 'llama-3.3-70b' } = ayarlar;
+  const { hesapKimligi, anahtar, model = 'llama-3.3-70b', araci } = ayarlar;
   if (!hesapKimligi || !anahtar) {
     throw new Error('Önce Ayarlar bölümünden Cloudflare hesap kimliği ve anahtarı girin.');
   }
   const secim = ZEKA_MODELLERI[model] || ZEKA_MODELLERI['llama-3.3-70b'];
+  const temel = (araci || DOGRUDAN_UC).replace(/\/+$/, '');
 
   const durdurucu = new AbortController();
   const sayac = setTimeout(() => durdurucu.abort(), ZAMAN_ASIMI_MS);
@@ -119,7 +124,7 @@ async function modeliCagir(ayarlar, mesajlar, isaret) {
 
   let yanit;
   try {
-    yanit = await fetch(`${UC_NOKTA}/${hesapKimligi}/ai/run/${secim.kimlik}`, {
+    yanit = await fetch(`${temel}/accounts/${hesapKimligi}/ai/run/${secim.kimlik}`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${anahtar}`,
@@ -134,7 +139,14 @@ async function modeliCagir(ayarlar, mesajlar, isaret) {
         isaret?.aborted ? 'Not çıkarma iptal edildi.' : 'Yapay zekâ servisi zamanında yanıt vermedi.',
       );
     }
-    throw new Error('Yapay zekâ servisine ulaşılamadı. İnternet bağlantınızı kontrol edin.');
+    // Aracı girilmemişse istek doğrudan Cloudflare'e gitmiştir ve tarayıcı
+    // onu CORS yüzünden engellemiştir; "internetinizi kontrol edin" demek
+    // kullanıcıyı yanlış yere yönlendirir.
+    throw new Error(
+      araci
+        ? 'Aracı adrese ulaşılamadı. Adresi ve internet bağlantınızı kontrol edin.'
+        : 'Tarayıcı Cloudflare\'e doğrudan bağlanamıyor. Ayarlardan aracı adresini girin (worker/KURULUM.md).',
+    );
   } finally {
     clearTimeout(sayac);
     isaret?.removeEventListener('abort', vazgec);
