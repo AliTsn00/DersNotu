@@ -14,7 +14,9 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      injectRegister: 'auto',
+      // Kaydı main.jsx elle yapar: yeni sürüm indiğinde kullanıcıya haber
+      // verebilmek için kayıt nesnesine erişmemiz gerekiyor.
+      injectRegister: null,
       includeAssets: ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png'],
       manifest: {
         name: 'Ders Notu',
@@ -44,6 +46,11 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg,webmanifest}'],
         cleanupOutdatedCaches: true,
+        // Yeni service worker beklemeye geçmeden devralsın ve açık sekmeleri
+        // hemen üstlensin. Bunlar olmadan kullanıcı, yayınlanmış yeni sürümü
+        // günlerce göremeyebiliyor — önbellekteki eski paket sunulmaya devam eder.
+        skipWaiting: true,
+        clientsClaim: true,
       },
     }),
   ],

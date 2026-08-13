@@ -57,6 +57,8 @@ export default function App() {
   const [zekaIlerleme, zekaIlerlemeAyarla] = useState(null);
   const [zekaHatasi, zekaHatasiAyarla] = useState('');
   const [zekaUyarilari, zekaUyarilariAyarla] = useState([]);
+  // Yeni sürüm indiğinde, yenilemeyi uygulayacak işlevi tutar.
+  const [yeniSurum, yeniSurumAyarla] = useState(null);
 
   const dinleyiciRef = useRef(null);
   const baslangicRef = useRef(0);
@@ -138,6 +140,13 @@ export default function App() {
     const yaz = () => taslakYaz(taslakRef.current);
     window.addEventListener('pagehide', yaz);
     return () => window.removeEventListener('pagehide', yaz);
+  }, []);
+
+  // main.jsx yeni sürüm indiğinde haber verir.
+  useEffect(() => {
+    const dinle = (olay) => yeniSurumAyarla(() => olay.detail);
+    window.addEventListener('yeni-surum', dinle);
+    return () => window.removeEventListener('yeni-surum', dinle);
   }, []);
 
   // Metin değiştikçe gecikmeli yaz: canlı dinlemede metin saniyede birkaç kez
@@ -437,6 +446,21 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-3xl px-4 py-5 pb-16">
+        {yeniSurum ? (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 dark:border-indigo-900 dark:bg-indigo-950/40">
+            <p className="text-sm text-indigo-900 dark:text-indigo-200">
+              Uygulamanın yeni sürümü hazır.
+            </p>
+            <button
+              type="button"
+              onClick={() => yeniSurum()}
+              className="shrink-0 rounded-xl bg-indigo-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-indigo-500"
+            >
+              Yenile
+            </button>
+          </div>
+        ) : null}
+
         {sekme === 'kayit' ? (
           <KayitEkrani
             mod={mod}
