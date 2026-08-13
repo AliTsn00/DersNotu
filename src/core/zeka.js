@@ -8,7 +8,13 @@
 //   · Arapça parçaları metinden çıkarır → model onları göremez, bozamaz
 //   · model başarısız olursa çevrimdışı yedek olarak devreye girer
 
-import { hazirlikYap, notuDenetle, notuTamamla, caprazDogrula } from '../turkce/llm.js';
+import {
+  hazirlikYap,
+  notuDenetle,
+  notuTamamla,
+  caprazDogrula,
+  uydurmalariAyikla,
+} from '../turkce/llm.js';
 import { notCikar } from '../turkce/index.js';
 
 // Cloudflare'in kendi API'si tarayıcıdan çağrılamıyor: ön kontrol (OPTIONS)
@@ -60,6 +66,10 @@ tanımanın açıkça yanlış duyduğu kelimeleri bağlamdan düzeltebilirsin
 
 ARAPÇA KORUMA — İHLAL EDİLEMEZ:
 - ⟦AR:0⟧ gibi yer tutucuları AYNEN kopyala. İçeriğini tahmin etme, yazma, değiştirme.
+- SANA VERİLMEYEN bir yer tutucuyu ASLA yazma. Yalnızca yukarıdaki cümlelerde
+  gördüğün numaraları kullanabilirsin. Bir âyetten ya da hadîsten söz ediliyor
+  ama metinde yer tutucu yoksa, o cümleyi normal "madde" türünde yaz.
+  Yer tutucu uydurmak, o maddeyi hiç yazmamaktan çok daha kötüdür.
 - Çıktında hiçbir yerde Arapça harf bulunmayacak.
 - Bir âyet/hadîsin kaynağından emin değilsen kunye alanını boş bırak.
   Yanlış kaynak yazmak, kaynak yazmamaktan çok daha kötüdür.
@@ -91,8 +101,9 @@ JSON biçimi:
 "tur" şunlardan biri: baslik, tanim, madde, listeBasi, onemli, ornek, formul,
 bilgi, ayet, hadis, dua, arapca, gorus.
 - tanim türünde metin şu biçimde olmalı: "**Terim:** Açıklama"
-- ayet/hadis/dua/arapca türünde metin SADECE ⟦AR:n⟧ yer tutucusu olmalı,
-  kunye alanına varsa kaynak yazılır ("Bakara 153", "Müslim").
+- ayet/hadis/dua/arapca türünü YALNIZCA elinde gerçek bir ⟦AR:n⟧ varsa kullan.
+  Bu türlerde metin SADECE o yer tutucudan ibaret olmalı, kunye alanına varsa
+  kaynak yazılır ("Bakara 153", "Müslim").
 - ornek türünde metin "Örnek: ..." ile başlar.`;
 
 /**
@@ -309,6 +320,28 @@ function cumleleriYaz(cumleler) {
     .join('\n');
 }
 
+/**
+ * Parçada gerçekten bulunan yer tutucuları modele açıkça bildirir.
+ *
+ * Yönerge tek başına yetmiyor: model, âyetten söz edilen bir cümle görünce
+ * elinde yer tutucu olmasa da uydurabiliyor. Kullanılabilir numaraları saymak
+ * bu eğilimi kesiyor.
+ */
+export function yerTutucuNotu(cumleler) {
+  const bulunanlar = [
+    ...new Set(
+      cumleler.flatMap((cumle) =>
+        [...String(cumle.metin || '').matchAll(/⟦(AR:\d+)⟧/gu)].map((esles) => esles[1]),
+      ),
+    ),
+  ];
+  return bulunanlar.length
+    ? `\nBu parçada kullanabileceğin yer tutucular yalnızca şunlar: ${bulunanlar
+        .map((anahtar) => `⟦${anahtar}⟧`)
+        .join(', ')}. Başka bir yer tutucu yazma.`
+    : '\nBu parçada hiç Arapça yer tutucu yok. Çıktında ⟦AR:...⟧ biçiminde hiçbir şey yazma.';
+}
+
 /** Modelin sade çıktısını uygulamanın iç yapısına dönüştürür. */
 function tamYapiyaCevir(basit) {
   const bolumler = (basit.bolumler || []).map((bolum, bi) => {
@@ -401,7 +434,9 @@ export async function akilliNotCikar(hamMetin, ayarlar = {}) {
         { role: 'system', content: YONERGE },
         {
           role: 'user',
-          content: `Aşağıdaki ders çözümünü ders notuna çevir.${baglam}\n\n${cumleleriYaz(parcalar[i])}`,
+          content:
+            `Aşağıdaki ders çözümünü ders notuna çevir.${baglam}\n\n` +
+            `${cumleleriYaz(parcalar[i])}\n${yerTutucuNotu(parcalar[i])}`,
         },
       ],
       isaret,
@@ -417,9 +452,15 @@ export async function akilliNotCikar(hamMetin, ayarlar = {}) {
 
   const taslak = { baslik, bolumler, ozet, sorular, anahtarlar: [] };
 
+  // Karşılığı olmayan yer tutucular önce ayıklanır. Bunlar boş göndermedir:
+  // uydurulmuş bir metin taşımadıkları için notun tamamını feda etmeyi
+  // gerektirmiyorlar, maddeyi düşürmek yetiyor.
+  const uydurma = uydurmalariAyikla(taslak, hazirlik.arapca);
+
   const { hatalar, dusen } = notuDenetle(taslak, hazirlik.arapca);
   if (hatalar.length) {
-    // Arapça koruması ihlal edildi: notu kullanmıyoruz.
+    // Notta ham Arapça metin var: model alıntının kendisine dokunmuş. Bu
+    // gerçek ihlaldir, not kullanılmaz.
     throw new Error(
       `Yapay zekâ Arapça alıntılara dokundu, not kullanılmadı:\n${hatalar.slice(0, 3).join('\n')}`,
     );
@@ -427,6 +468,11 @@ export async function akilliNotCikar(hamMetin, ayarlar = {}) {
 
   const not = notuTamamla(taslak, hazirlik, { sure: ayarlar.sure, tarih: ayarlar.tarih });
   const uyarilar = caprazDogrula(not, hazirlik.yerelOlcut);
+  if (uydurma) {
+    uyarilar.push(
+      `${uydurma} madde, karşılığı olmayan bir âyet/hadîs göndermesi taşıdığı için çıkarıldı.`,
+    );
+  }
   if (dusen.length) {
     uyarilar.push(`${dusen.length} Arapça alıntı nota girmemiş olabilir.`);
   }

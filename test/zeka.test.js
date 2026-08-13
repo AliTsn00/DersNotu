@@ -1,6 +1,62 @@
 import { describe, expect, it } from 'vitest';
 
-import { ciktiyiAl, jsonAyikla, jsonKurtarmaAdaylari } from '../src/core/zeka.js';
+import { ciktiyiAl, jsonAyikla, jsonKurtarmaAdaylari, yerTutucuNotu } from '../src/core/zeka.js';
+import { uydurmalariAyikla } from '../src/turkce/llm.js';
+
+describe('yerTutucuNotu', () => {
+  it('parçadaki yer tutucuları sayar', () => {
+    const not = yerTutucuNotu([
+      { metin: 'Hoca ⟦AR:3⟧ âyetini okudu.' },
+      { metin: 'Sonra ⟦AR:4⟧ dedi.' },
+    ]);
+    expect(not).toContain('⟦AR:3⟧, ⟦AR:4⟧');
+    expect(not).toContain('Başka bir yer tutucu yazma');
+  });
+
+  it('yer tutucu yoksa açıkça yasaklar', () => {
+    const not = yerTutucuNotu([{ metin: 'Sabır güzeldir.' }]);
+    expect(not).toContain('hiç Arapça yer tutucu yok');
+  });
+});
+
+describe('uydurmalariAyikla', () => {
+  const notKur = (maddeler) => ({
+    baslik: 'Ders',
+    bolumler: [{ id: 'b0', baslik: 'Giriş', gruplar: [{ id: 'b0-g0', maddeler }] }],
+    ozet: [],
+    sorular: [],
+  });
+
+  it('tanımsız yer tutucu taşıyan maddeyi düşürür', () => {
+    const not = notKur([
+      { id: 'c1', metin: 'Sabır güzeldir.' },
+      { id: 'c4', metin: '⟦AR:9⟧' },
+    ]);
+    const silinen = uydurmalariAyikla(not, { 'AR:0': 'x' });
+    expect(silinen).toBe(1);
+    expect(not.bolumler[0].gruplar[0].maddeler).toHaveLength(1);
+  });
+
+  it('tanımlı yer tutucuya dokunmaz', () => {
+    const not = notKur([{ id: 'c4', metin: '⟦AR:0⟧' }]);
+    expect(uydurmalariAyikla(not, { 'AR:0': 'x' })).toBe(0);
+    expect(not.bolumler[0].gruplar[0].maddeler).toHaveLength(1);
+  });
+
+  it('maddeleri tükenen bölümü kaldırır', () => {
+    const not = notKur([{ id: 'c4', metin: '⟦AR:9⟧' }]);
+    uydurmalariAyikla(not, {});
+    expect(not.bolumler).toHaveLength(0);
+  });
+
+  it('alt maddedeki uydurmayı temizler ama maddeyi korur', () => {
+    const not = notKur([
+      { id: 'c1', metin: 'Sabır güzeldir.', alt: [{ metin: 'Doğru' }, { metin: '⟦AR:9⟧' }] },
+    ]);
+    expect(uydurmalariAyikla(not, {})).toBe(0);
+    expect(not.bolumler[0].gruplar[0].maddeler[0].alt).toHaveLength(1);
+  });
+});
 
 describe('ciktiyiAl', () => {
   it('response alanındaki metni alır', () => {

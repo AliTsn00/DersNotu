@@ -151,6 +151,43 @@ export function notuDenetle(not, arapca = {}) {
   return { hatalar, dusen: [...tanimli].filter((a) => !kullanilan.has(a)) };
 }
 
+/**
+ * Modelin uydurduğu yer tutucuları taşıyan maddeleri ayıklar.
+ *
+ * Karşılığı olmayan bir ⟦AR:n⟧, içeriği olmayan bir âyet/hadîs referansı
+ * demektir. Maddeyi silmek, boş bir alıntı bırakmaktan da notun tamamını
+ * çöpe atmaktan da doğrudur: ham Arapça sızıntısından farklı olarak burada
+ * uydurulmuş bir metin yok, yalnızca boş bir gönderme var.
+ *
+ * @returns {number} silinen madde sayısı
+ */
+export function uydurmalariAyikla(not, arapca = {}) {
+  const tanimli = new Set(Object.keys(arapca));
+  const uydurmaVar = (metin) =>
+    [...String(metin || '').matchAll(YER_TUTUCU)].some((esles) => !tanimli.has(esles[1]));
+
+  let silinen = 0;
+  for (const bolum of not.bolumler || []) {
+    for (const grup of bolum.gruplar || []) {
+      grup.maddeler = (grup.maddeler || []).filter((madde) => {
+        madde.alt = (madde.alt || []).filter((alt) => !uydurmaVar(alt.metin));
+        if (!uydurmaVar(madde.metin)) return true;
+        silinen += 1;
+        return false;
+      });
+    }
+    bolum.gruplar = (bolum.gruplar || []).filter((grup) => grup.maddeler.length);
+  }
+  not.bolumler = (not.bolumler || []).filter((bolum) => bolum.gruplar.length);
+
+  for (const alan of ['ozet', 'sorular']) {
+    if (Array.isArray(not[alan])) not[alan] = not[alan].filter((satir) => !uydurmaVar(satir));
+  }
+  if (uydurmaVar(not.baslik)) not.baslik = '';
+
+  return silinen;
+}
+
 /** Yer tutucuları orijinal Arapça metinlerle değiştirir. */
 function arapcayiGeriKoy(not, arapca) {
   const coz = (metin) =>
