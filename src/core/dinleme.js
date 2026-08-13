@@ -3,6 +3,8 @@
 // Chrome/Edge (masaüstü) ve Android Chrome bu API'yi destekler. Motor uzun
 // sessizliklerde kendini kapattığı için ders boyunca otomatik yeniden başlatılır.
 
+import { trKucuk } from '../turkce/harf.js';
+
 const TanimaSinifi =
   typeof window !== 'undefined'
     ? window.SpeechRecognition || window.webkitSpeechRecognition
@@ -26,11 +28,16 @@ export function kesinKarari(yeni, onceki) {
   const o = String(onceki || '').trim();
   if (!y) return 'yoksay';
   if (!o) return 'ekle';
-  if (y === o) return 'yoksay';
+  // Motor aynı sözü büyük/küçük harfini değiştirerek yeniden bildirebiliyor
+  // ("bugün sizlerle peygamber" → "Bugün sizlerle Peygamber"), bu yüzden
+  // karşılaştırma Türkçe kurallarıyla harf duyarsız yapılır.
+  const yk = trKucuk(y);
+  const ok = trKucuk(o);
+  if (yk === ok) return 'yoksay';
   // Yeni metin öncekiyle başlıyorsa aynı cümlenin uzamış hâlidir.
-  if (y.startsWith(o)) return 'degistir';
+  if (yk.startsWith(ok)) return 'degistir';
   // Tersi de olur: motor bazen kısalmış bir sürüm geri gönderir.
-  if (o.startsWith(y)) return 'yoksay';
+  if (ok.startsWith(yk)) return 'yoksay';
   return 'ekle';
 }
 

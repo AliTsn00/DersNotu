@@ -36,6 +36,22 @@ describe('kesinKarari', () => {
   it('baştaki ve sondaki boşluğu önemsemez', () => {
     expect(kesinKarari('  Selamünaleyküm  ', 'Selamünaleyküm')).toBe('yoksay');
   });
+
+  // Motor aynı sözü bazen büyük harfe çevirip yeniden bildiriyor.
+  it('yalnızca büyük/küçük harfi değişen metni tekrar sayar', () => {
+    expect(kesinKarari('Bugün sizlerle Peygamber', 'bugün sizlerle peygamber')).toBe('yoksay');
+  });
+
+  it('harf değişmiş ve uzamışsa yine değiştirir', () => {
+    expect(kesinKarari('Bugün sizlerle Peygamber Efendimiz', 'bugün sizlerle peygamber')).toBe(
+      'degistir',
+    );
+  });
+
+  it('Türkçe I/ı kurallarına göre karşılaştırır', () => {
+    expect(kesinKarari('İYİSİNİZ', 'iyisiniz')).toBe('yoksay');
+    expect(kesinKarari('IŞIK', 'ışık')).toBe('yoksay');
+  });
 });
 
 describe('kesiniKat', () => {
@@ -98,5 +114,39 @@ describe('gerçek telefon dizisi', () => {
     // Eski kod her bildirimi yeni satır sayıyordu; hatanın büyüklüğü buydu.
     const eski = bildirimler.reduce((a, m) => (a ? `${a}\n${m}` : m), '');
     expect(eski.split('\n')).toHaveLength(12);
+  });
+});
+
+describe('gerçek ders kaydı — Peygamber Dersi', () => {
+  // Aynı cihazdan alınan 79 saniyelik gerçek kayıt. Motor burada büyük/küçük
+  // harfi de değiştirerek tekrar ettiği için daha zorlu bir örnek.
+  const bildirimler = [
+    'Bugün', 'Bugün', 'Bugün sizlerle',
+    'Bugün sizlerle peygamber',
+    'Bugün sizlerle Peygamber',
+    'Bugün sizlerle Peygamber',
+    'Bugün sizlerle Peygamber Efendimiz',
+    'Bugün sizlerle Peygamber Efendimiz',
+    'Bugün sizlerle peygamber efendimiz',
+    'Bugün sizlerle peygamber efendimiz sallallahu',
+    'Bugün sizlerle peygamber efendimiz sallallahu aleyhi',
+    'Bugün sizlerle peygamber efendimiz sallallahu aleyhi ve',
+    'Bugün sizlerle peygamber efendimiz sallallahu aleyhi ve sellem',
+    'bugün sahabe efendilerimiz',
+  ];
+
+  it('on dört bildirimi iki cümleye indirir', () => {
+    let hamMetin = '';
+    let sonKesin = '';
+    for (const metin of bildirimler) {
+      const karar = kesinKarari(metin, sonKesin);
+      if (karar === 'yoksay') continue;
+      sonKesin = metin;
+      hamMetin = kesiniKat(hamMetin, metin, karar === 'degistir');
+    }
+    expect(hamMetin.split('\n')).toEqual([
+      'Bugün sizlerle peygamber efendimiz sallallahu aleyhi ve sellem',
+      'bugün sahabe efendilerimiz',
+    ]);
   });
 });
