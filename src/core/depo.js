@@ -89,6 +89,10 @@ export const VARSAYILAN_AYARLAR = {
   cevirimModel: 'whisper-large-v3',
   cevirimUrl: 'https://api.groq.com/openai/v1',
   cevirimAnahtari: '',
+  // Yapay zekâ ile not çıkarma (Cloudflare Workers AI, ücretsiz katman).
+  zekaHesap: '',
+  zekaAnahtari: '',
+  zekaModel: 'llama-3.3-70b',
 };
 
 export function ayarlariOku() {

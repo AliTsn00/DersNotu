@@ -4,6 +4,7 @@ import { notCikar } from './turkce/index.js';
 import { duzenlemeyeAl, yeniMaddeleriKat } from './turkce/duzenle.js';
 import { Dinleyici, konusmaTanimaVarMi, kesiniKat } from './core/dinleme.js';
 import { sesiYaziyaCevir, CEVIRIM_SERVISLERI } from './core/kayitci.js';
+import { akilliNotCikar } from './core/zeka.js';
 import { ekraniAcikTut, ekranKilidiniBirak, ekranKilidiniIzle } from './core/ekran.js';
 import {
   VARSAYILAN_AYARLAR,
@@ -51,11 +52,17 @@ export default function App() {
   const [duzenleniyor, duzenleniyorAyarla] = useState(false);
   // Kurtarılan taslağın zaman damgası; 0 ise kurtarma olmadı.
   const [kurtarilan, kurtarilanAyarla] = useState(0);
+  // Yapay zekâ ile not çıkarma durumu.
+  const [zekaCalisiyor, zekaCalisiyorAyarla] = useState(false);
+  const [zekaIlerleme, zekaIlerlemeAyarla] = useState(null);
+  const [zekaHatasi, zekaHatasiAyarla] = useState('');
+  const [zekaUyarilari, zekaUyarilariAyarla] = useState([]);
 
   const dinleyiciRef = useRef(null);
   const baslangicRef = useRef(0);
   // Süren yazıya çevirme isteğini iptal edebilmek için.
   const cevirimRef = useRef(null);
+  const zekaRef = useRef(null);
   const canliDestekli = useMemo(() => konusmaTanimaVarMi(), []);
   // Çerçeve (iframe) içinde açıldığında tarayıcı mikrofon izni sormaz.
   const cerceveIcinde = useMemo(() => {
@@ -248,6 +255,44 @@ export default function App() {
     [ayarlar],
   );
 
+  // --- Yapay zekâ ile not ---------------------------------------------------
+  const zekaHazir = Boolean(ayarlar.zekaHesap && ayarlar.zekaAnahtari);
+
+  const zekayiIptalEt = useCallback(() => {
+    zekaRef.current?.abort();
+  }, []);
+
+  const akilliNotuCikar = useCallback(async () => {
+    if (!hamMetin.trim() || zekaCalisiyor) return;
+    zekaHatasiAyarla('');
+    zekaUyarilariAyarla([]);
+    zekaCalisiyorAyarla(true);
+    const durdurucu = new AbortController();
+    zekaRef.current = durdurucu;
+    try {
+      const { not: yeni, uyarilar } = await akilliNotCikar(hamMetin, {
+        hesapKimligi: ayarlar.zekaHesap,
+        anahtar: ayarlar.zekaAnahtari,
+        model: ayarlar.zekaModel,
+        detay: ayarlar.detay,
+        sure,
+        isaret: durdurucu.signal,
+        ilerleme: zekaIlerlemeAyarla,
+      });
+      // Akıllı not, elle düzenleme yuvasına konur: kaydetme, düzenleme ve
+      // arşivleme altyapısı böylece olduğu gibi çalışır.
+      elleNotAyarla(yeni);
+      zekaUyarilariAyarla(uyarilar);
+      sekmeAyarla('not');
+    } catch (sorun) {
+      zekaHatasiAyarla(sorun.message || 'Akıllı not çıkarılamadı.');
+    } finally {
+      zekaCalisiyorAyarla(false);
+      zekaIlerlemeAyarla(null);
+      zekaRef.current = null;
+    }
+  }, [hamMetin, zekaCalisiyor, ayarlar, sure]);
+
   // --- Ders işlemleri ------------------------------------------------------
   const temizle = useCallback(() => {
     dinlemeyiDurdur();
@@ -260,6 +305,8 @@ export default function App() {
     duzenleniyorAyarla(false);
     hataAyarla('');
     kurtarilanAyarla(0);
+    zekaHatasiAyarla('');
+    zekaUyarilariAyarla([]);
     taslakSil();
   }, [dinlemeyiDurdur]);
 
@@ -319,6 +366,8 @@ export default function App() {
   const otomatigeDon = useCallback(() => {
     elleNotAyarla(null);
     duzenleniyorAyarla(false);
+    zekaUyarilariAyarla([]);
+    zekaHatasiAyarla('');
   }, []);
 
   const arsivSil = useCallback(
@@ -424,6 +473,13 @@ export default function App() {
             duzenlemeyiKapat={() => duzenleniyorAyarla(false)}
             otomatigeDon={otomatigeDon}
             notuDegistir={elleNotAyarla}
+            akilliNotuCikar={akilliNotuCikar}
+            zekayiIptalEt={zekayiIptalEt}
+            zekaHazir={zekaHazir}
+            zekaCalisiyor={zekaCalisiyor}
+            zekaIlerleme={zekaIlerleme}
+            zekaHatasi={zekaHatasi}
+            zekaUyarilari={zekaUyarilari}
           />
         ) : null}
 

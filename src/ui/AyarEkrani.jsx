@@ -3,6 +3,7 @@
 import { Alan, Kart, girdiSinifi } from './parcalar.jsx';
 import { ekranKilidiVarMi } from '../core/ekran.js';
 import { CEVIRIM_SERVISLERI } from '../core/kayitci.js';
+import { ZEKA_MODELLERI } from '../core/zeka.js';
 
 const DILLER = [
   { id: 'tr-TR', ad: 'Türkçe (Türkiye)' },
@@ -156,6 +157,63 @@ export default function AyarEkrani({ ayarlar, guncelle }) {
         </Alan>
       </Kart>
 
+      <Kart className="space-y-4">
+        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+          Yapay zekâ ile not çıkarma
+        </h3>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          Uygulamanın kendi not çıkarma motoru kural tabanlıdır: cümleleri sınıflar ama
+          <strong> anlamaz</strong>. Yarım kalmış cümleleri birleştirmek, konuşmayı yazı
+          diline çevirmek ve konuya göre bölüm açmak için yapay zekâ gerekir.
+          Cloudflare’in ücretsiz katmanı günde binlerce madde işler ve kredi kartı istemez.
+        </p>
+
+        <Alan
+          etiket="Hesap kimliği (Account ID)"
+          aciklama="dash.cloudflare.com → AI → Workers AI → Use REST API"
+        >
+          <input
+            type="text"
+            value={ayarlar.zekaHesap}
+            onChange={(olay) => ayarla('zekaHesap')(olay.target.value.trim())}
+            placeholder="32 haneli kimlik"
+            autoComplete="off"
+            spellCheck={false}
+            className={girdiSinifi}
+          />
+        </Alan>
+
+        <Alan
+          etiket="API anahtarı"
+          aciklama="Workers AI Read + Edit yetkili bir token. Boşsa akıllı not kapalı kalır."
+        >
+          <input
+            type="password"
+            value={ayarlar.zekaAnahtari}
+            onChange={(olay) => ayarla('zekaAnahtari')(olay.target.value.trim())}
+            autoComplete="off"
+            className={girdiSinifi}
+          />
+        </Alan>
+
+        <Alan etiket="Model">
+          <select
+            value={ayarlar.zekaModel}
+            onChange={(olay) => ayarla('zekaModel')(olay.target.value)}
+            className={girdiSinifi}
+          >
+            {Object.entries(ZEKA_MODELLERI).map(([id, model]) => (
+              <option key={id} value={id}>
+                {model.ad}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            {ZEKA_MODELLERI[ayarlar.zekaModel]?.aciklama}
+          </p>
+        </Alan>
+      </Kart>
+
       <Kart className="space-y-2">
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Gizlilik</h3>
         <ul className="space-y-1.5 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
@@ -167,11 +225,18 @@ export default function AyarEkrani({ ayarlar, guncelle }) {
           </li>
           <li>
             <span className="font-medium text-zinc-700 dark:text-zinc-200">
-              Ses ise dışarı çıkar.
+              Ses dışarı çıkar.
             </span>{' '}
             Yüklediğiniz dosya seçtiğiniz çevirme servisine gider. Canlı dinlemede de
             tarayıcı sesi Google’ın sunucularına gönderir — bu, tarayıcının kendi
             davranışıdır ve kapatılamaz.
+          </li>
+          <li>
+            <span className="font-medium text-zinc-700 dark:text-zinc-200">
+              Akıllı not açıksa metin de çıkar.
+            </span>{' '}
+            Ders çözümü Cloudflare’e gönderilir. Arapça alıntılar gönderilmeden önce
+            metinden çıkarılır; yapay zekâ onları hiç görmez.
           </li>
           <li>
             <span className="font-medium text-zinc-700 dark:text-zinc-200">
