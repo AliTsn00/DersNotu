@@ -9,6 +9,8 @@
 // plana alındığında ya da ekran kapandığında kayıt sessizce ölüyor, bu da
 // 90 dakikalık bir dersi kaybetmek demek. Ayrıntı için YOL-HARITASI.md.
 
+import { ipucuMetni } from '../turkce/isitme.js';
+
 const UZANTILAR = {
   'audio/webm': 'webm',
   'audio/ogg': 'ogg',
@@ -51,6 +53,12 @@ export const CEVIRIM_IPUCU =
   'Bakara sûresi 153. âyet, sallallahu aleyhi ve sellem, Buhârî, Müslim, Tirmizî, ' +
   'İmam Gazâlî, tefsir, fıkıh, usûl, hadîs-i şerîf, meâl, mezhep, Hanefî.';
 
+/**
+ * İpucu alanının üst sınırı. Whisper bu alanı ~224 token'la sınırlıyor; aşılırsa
+ * ipucunun tamamı yok sayılabiliyor, yani uzun liste hiç liste vermemek demek.
+ */
+const IPUCU_SINIRI = 850;
+
 /** Uzun yüklemelerde bile takılı kalmamak için üst sınır. */
 const ZAMAN_ASIMI_MS = 10 * 60 * 1000;
 
@@ -92,7 +100,7 @@ function hataMesaji(durum, govde, temelUrl) {
  *
  * @param {Blob|File} ses
  * @param {{anahtar: string, model?: string, temelUrl?: string, dil?: string,
- *          enBuyukMB?: number, isaret?: AbortSignal}} ayar
+ *          enBuyukMB?: number, sozluk?: string, isaret?: AbortSignal}} ayar
  * @returns {Promise<string>}
  */
 export async function sesiYaziyaCevir(ses, ayar) {
@@ -102,6 +110,7 @@ export async function sesiYaziyaCevir(ses, ayar) {
     temelUrl = CEVIRIM_SERVISLERI.groq.url,
     dil = 'tr',
     enBuyukMB = 25,
+    sozluk = '',
     isaret,
   } = ayar;
 
@@ -121,7 +130,12 @@ export async function sesiYaziyaCevir(ses, ayar) {
   govde.append('model', model);
   govde.append('language', dil);
   govde.append('response_format', 'json');
-  govde.append('prompt', CEVIRIM_IPUCU);
+  // Kullanıcının ders sözlüğü ipucuya katılır: terimi baştan doğru duymak,
+  // sonradan düzeltmekten her zaman iyidir.
+  govde.append('prompt', ipucuMetni(CEVIRIM_IPUCU, sozluk, IPUCU_SINIRI));
+  // Whisper varsayılan olarak örnekleme yapıyor; ders çözümünde yaratıcılık
+  // değil kararlılık istiyoruz.
+  govde.append('temperature', '0');
 
   // Kendi zaman aşımımız; dışarıdan gelen iptal işaretiyle birlikte çalışır.
   const durdurucu = new AbortController();

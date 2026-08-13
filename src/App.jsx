@@ -11,6 +11,7 @@ import {
 } from './core/dinleme.js';
 import { sesiYaziyaCevir, CEVIRIM_SERVISLERI } from './core/kayitci.js';
 import { akilliNotCikar } from './core/zeka.js';
+import { isitmeyiDuzelt } from './turkce/isitme.js';
 import { alintilariDogrula } from './kuran/dogrula.js';
 import { ekraniAcikTut, ekranKilidiniBirak, ekranKilidiniIzle } from './core/ekran.js';
 import {
@@ -67,12 +68,19 @@ export default function App() {
   const [zekaUyarilari, zekaUyarilariAyarla] = useState([]);
   // Yeni sürüm indiğinde, yenilemeyi uygulayacak işlevi tutar.
   const [yeniSurum, yeniSurumAyarla] = useState(null);
+  // Bu derste kaç yazım düzeltildi. Sessizce metin değiştiren bir katman
+  // güvenilmez olurdu; kullanıcı ne kadarına dokunulduğunu görsün.
+  const [duzeltmeSayisi, duzeltmeSayisiAyarla] = useState(0);
 
   const dinleyiciRef = useRef(null);
   const baslangicRef = useRef(0);
   // Süren yazıya çevirme isteğini iptal edebilmek için.
   const cevirimRef = useRef(null);
   const zekaRef = useRef(null);
+  // Dinleyicinin geri çağrısı bir kez kurulur; sözlük sonradan değişirse
+  // eski değeri kapatmasın diye referansla okunur.
+  const sozlukRef = useRef('');
+  sozlukRef.current = ayarlar.dersSozlugu;
   const canliDestekli = useMemo(() => konusmaTanimaVarMi(), []);
   // Çerçeve (iframe) içinde açıldığında tarayıcı mikrofon izni sormaz.
   const cerceveIcinde = useMemo(() => {
@@ -233,7 +241,16 @@ export default function App() {
       dil: ayarlar.dil,
       onAra: araMetinAyarla,
       onKesin: (metin, degistir) => {
-        hamMetinAyarla((onceki) => kesiniKat(onceki, metin, degistir));
+        // Düzeltme metin ham hâline girerken yapılır: hem kural motoru hem
+        // yapay zekâ hem de kullanıcının düzenleme ekranı düzeltilmiş metni
+        // görsün. Sonradan uygulamak, metnin iki ayrı sürümünü doğururdu.
+        const { metin: duzgun, duzeltmeler } = isitmeyiDuzelt(metin, sozlukRef.current);
+        if (duzeltmeler.length) {
+          duzeltmeSayisiAyarla(
+            (onceki) => onceki + duzeltmeler.reduce((say, kayit) => say + kayit.adet, 0),
+          );
+        }
+        hamMetinAyarla((onceki) => kesiniKat(onceki, duzgun, degistir));
         araMetinAyarla('');
       },
       onDurum: (yeniDurum) => {
@@ -299,15 +316,20 @@ export default function App() {
           temelUrl: ayarlar.cevirimUrl,
           dil: ayarlar.dil.slice(0, 2),
           enBuyukMB: servis?.enBuyukMB ?? 25,
+          sozluk: ayarlar.dersSozlugu,
           isaret: durdurucu.signal,
         });
         if (!metin) {
           hataAyarla('Serviste konuşma bulunamadı.');
           return;
         }
+        const { metin: duzgun, duzeltmeler } = isitmeyiDuzelt(metin, ayarlar.dersSozlugu);
+        duzeltmeSayisiAyarla((onceki) =>
+          onceki + duzeltmeler.reduce((say, kayit) => say + kayit.adet, 0),
+        );
         // Cümle sonlarını satıra çevir: bölütleyici satırları sert sınır sayar.
         hamMetinAyarla((onceki) => {
-          const yeni = metin.replace(/(?<=[.!?…])\s+/g, '\n');
+          const yeni = duzgun.replace(/(?<=[.!?…])\s+/g, '\n');
           return onceki ? `${onceki}\n${yeni}` : yeni;
         });
         sekmeAyarla('not');
@@ -376,6 +398,7 @@ export default function App() {
     kurtarilanAyarla(0);
     zekaHatasiAyarla('');
     zekaUyarilariAyarla([]);
+    duzeltmeSayisiAyarla(0);
     taslakSil();
   }, [dinlemeyiDurdur]);
 

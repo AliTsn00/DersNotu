@@ -89,6 +89,9 @@ export const VARSAYILAN_AYARLAR = {
   cevirimModel: 'whisper-large-v3',
   cevirimUrl: 'https://api.groq.com/openai/v1',
   cevirimAnahtari: '',
+  // Dersin kendi terimleri ve sık yanlış duyulan sözler. Hem tanıma motoruna
+  // ipucu olarak gider hem tanıma sonrası düzeltmede kullanılır.
+  dersSozlugu: '',
   // Yapay zekâ ile not çıkarma (Cloudflare Workers AI, ücretsiz katman).
   zekaHesap: '',
   zekaAnahtari: '',

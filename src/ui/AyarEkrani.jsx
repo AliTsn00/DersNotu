@@ -182,6 +182,35 @@ export default function AyarEkrani({ ayarlar, guncelle }) {
         </Alan>
       </Kart>
 
+      <Kart className="space-y-3">
+        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+          Ders sözlüğü
+        </h3>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          Hocanızın sık kullandığı terimleri ve tanıma motorunun yanlış duyduğu
+          sözleri buraya yazın. İki işe birden yarar: terimler kayda başlamadan
+          önce motora <strong>ipucu</strong> olarak verilir, yanlış duyulanlar da
+          metne geçtikten sonra düzeltilir.
+        </p>
+        <Alan
+          etiket="Her satıra bir madde"
+          aciklama="Yalnızca terim yazarsanız ipucu olur. Düzeltme için: yanlış = doğru"
+        >
+          <textarea
+            value={ayarlar.dersSozlugu}
+            onChange={(olay) => ayarla('dersSozlugu')(olay.target.value)}
+            rows={6}
+            spellCheck={false}
+            placeholder={'Serahsî\nMecelle\nada olan = Allah’a olan\nsahabi = sahâbî'}
+            className={`${girdiSinifi} font-mono text-[13px]`}
+          />
+        </Alan>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          Arapça metne dokunulmaz: hiçbir kural Arap harfi içeren bir ibareyi
+          değiştirmez. Âyet ve hadîsler konuşma tanımadan geldiği gibi kalır.
+        </p>
+      </Kart>
+
       <Kart className="space-y-4">
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
           Yapay zekâ ile not çıkarma
