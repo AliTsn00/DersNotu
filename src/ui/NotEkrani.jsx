@@ -37,6 +37,7 @@ export default function NotEkrani({
   zekaIlerleme,
   zekaHatasi,
   zekaUyarilari,
+  mushafDuzeltmesi,
 }) {
   const [bildirim, bildirimYaz] = useState('');
   const yapayZekaNotu = not?.uretim === 'yapayZeka';
@@ -122,6 +123,13 @@ export default function NotEkrani({
             ))}
           </ul>
         </div>
+      ) : null}
+
+      {mushafDuzeltmesi ? (
+        <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300">
+          <strong>{mushafDuzeltmesi} âyet</strong> mushaf metniyle düzeltildi. Konuşma
+          tanımanın yazdığını görmek için alıntı kutusundaki bağlantıyı açın.
+        </p>
       ) : null}
 
       <Kart className="flex flex-wrap items-center gap-2">

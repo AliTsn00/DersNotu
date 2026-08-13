@@ -94,10 +94,19 @@ export function dizinKur(veri) {
     });
   }
 
-  const kunyeKur = (sira) => {
+  const kunyeKur = (sira, arananSikisik = '') => {
     const { sure, ayet } = konumBul(sira, veri.sureBasi);
     const ad = veri.surelerinAdlari?.[sure - 1] || `${sure}. sûre`;
-    return { sure, ayet, kunye: `${ad} ${ayet}`, metin: metinler[sira] };
+    // Aranan ibare âyetin ne kadarını kaplıyor? Küçük bir parçayı tam âyetle
+    // değiştirmek, düzeltmek değil bilgi eklemek olurdu.
+    const tamBoy = sikisik[0][sira]?.length || 1;
+    return {
+      sure,
+      ayet,
+      kunye: `${ad} ${ayet}`,
+      metin: metinler[sira],
+      kapsama: arananSikisik ? Math.min(1, arananSikisik.length / tamBoy) : 0,
+    };
   };
 
   /**
@@ -118,7 +127,9 @@ export function dizinKur(veri) {
     if (arananSikisik.length >= 8) {
       for (const dizin of sikisik) {
         for (let sira = 0; sira < dizin.length; sira += 1) {
-          if (dizin[sira].includes(arananSikisik)) return { durum: 'kesin', ...kunyeKur(sira) };
+          if (dizin[sira].includes(arananSikisik)) {
+            return { durum: 'kesin', ...kunyeKur(sira, arananSikisik) };
+          }
         }
       }
     }
@@ -144,7 +155,7 @@ export function dizinKur(veri) {
     // Dört kelime ve %75 örtüşme: bunun altında yanlış eşleşme, doğru
     // eşleşmeden daha olası. Yanlış künye yazmak, künye yazmamaktan kötüdür.
     if (enIyi >= 0 && kelimeler.length >= 4 && benzerlik >= 0.75) {
-      return { durum: 'olasi', benzerlik, ...kunyeKur(enIyi) };
+      return { durum: 'olasi', benzerlik, ...kunyeKur(enIyi, arananSikisik) };
     }
     return { durum: 'yok' };
   }

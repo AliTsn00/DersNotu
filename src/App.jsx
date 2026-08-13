@@ -13,6 +13,7 @@ import { sesiYaziyaCevir, CEVIRIM_SERVISLERI } from './core/kayitci.js';
 import { akilliNotCikar } from './core/zeka.js';
 import { isitmeyiDuzelt } from './turkce/isitme.js';
 import { alintilariDogrula } from './kuran/dogrula.js';
+import { ayetleriDuzelt, ayetiElleUygula } from './kuran/duzelt.js';
 import { ekraniAcikTut, ekranKilidiniBirak, ekranKilidiniIzle } from './core/ekran.js';
 import {
   VARSAYILAN_AYARLAR,
@@ -29,7 +30,7 @@ import {
 
 import KayitEkrani from './ui/KayitEkrani.jsx';
 import NotEkrani from './ui/NotEkrani.jsx';
-import { AyetSonuclariBaglami } from './ui/NotGovdesi.jsx';
+import { AyetSonuclariBaglami, AyetiUygulaBaglami } from './ui/NotGovdesi.jsx';
 import ArsivEkrani from './ui/ArsivEkrani.jsx';
 import AyarEkrani from './ui/AyarEkrani.jsx';
 
@@ -135,6 +136,23 @@ export default function App() {
       iptal = true;
     };
   }, [not]);
+
+  // Doğrulanmış âyetler mushaf metniyle gösterilir. Düzeltme nota değil,
+  // notun türetilmiş bir kopyasına uygulanır: kaydedilen metin ham kalsın,
+  // düzeltme her açılışta doğrulamadan yeniden üretilsin.
+  const { not: gosterilenNot, duzeltilen: mushafDuzeltmesi } = useMemo(
+    () => ayetleriDuzelt(not, ayetSonuclari),
+    [not, ayetSonuclari],
+  );
+
+  // Yaklaşık eşleşmeyi kullanıcı onaylarsa kalıcı nota yazılır: bu bir
+  // gösterim tercihi değil, okuyanın verdiği karar.
+  const ayetiUygula = useCallback(
+    (maddeId, sonuc) => {
+      elleNotAyarla((onceki) => ayetiElleUygula(onceki || gosterilenNot, maddeId, sonuc));
+    },
+    [gosterilenNot],
+  );
 
   // --- Ayar kalıcılığı -----------------------------------------------------
   const ayarGuncelle = useCallback((yeni) => {
@@ -571,8 +589,10 @@ export default function App() {
 
         {sekme === 'not' ? (
           <AyetSonuclariBaglami.Provider value={ayetSonuclari}>
+            <AyetiUygulaBaglami.Provider value={ayetiUygula}>
             <NotEkrani
-              not={not}
+              not={gosterilenNot}
+              mushafDuzeltmesi={mushafDuzeltmesi}
               detay={ayarlar.detay}
               detayDegistir={(detay) => ayarGuncelle({ ...ayarlar, detay })}
               kaydet={kaydet}
@@ -590,6 +610,7 @@ export default function App() {
               zekaHatasi={zekaHatasi}
               zekaUyarilari={zekaUyarilari}
             />
+            </AyetiUygulaBaglami.Provider>
           </AyetSonuclariBaglami.Provider>
         ) : null}
 

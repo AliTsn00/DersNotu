@@ -46,6 +46,9 @@ const ALINTI_YAZI = {
  */
 export const AyetSonuclariBaglami = createContext(new Map());
 
+/** Yaklaşık eşleşmeyi kullanıcı isteğiyle uygulayan işlev. */
+export const AyetiUygulaBaglami = createContext(null);
+
 /** Hadîs metnini güvenilir bir külliyatta aratan bağlantı. */
 function hadisAramaBagi(metin) {
   const arama = String(metin || '').trim().slice(0, 120);
@@ -118,6 +121,57 @@ export function AlintiKutusu({ madde, numara }) {
       >
         {madde.metin}
       </p>
+
+      {madde.mushaftanDuzeltildi && madde.ozgunMetin ? (
+        <details className="mt-1.5">
+          <summary className="cursor-pointer text-[11px] text-zinc-500 dark:text-zinc-400">
+            Mushaf metniyle düzeltildi — tanımanın yazdığını göster
+          </summary>
+          <p
+            dir="rtl"
+            lang="ar"
+            className="arapca mt-1 text-right text-[17px] leading-loose text-zinc-400 line-through decoration-zinc-400/60"
+          >
+            {madde.ozgunMetin}
+          </p>
+        </details>
+      ) : null}
+
+      <YakinAyetOnerisi madde={madde} sonuc={sonuc} />
+    </div>
+  );
+}
+
+/**
+ * Yaklaşık eşleşmede mushaftaki en yakın âyeti gösterir ve uygulamayı okuyana
+ * bırakır. Kendiliğinden uygulamak yanlış olurdu: motor bambaşka bir âyeti en
+ * yakın sayabilir ve sonuç, bozuk metinden daha zararlı bir "düzeltme" olur.
+ */
+function YakinAyetOnerisi({ madde, sonuc }) {
+  const uygula = useContext(AyetiUygulaBaglami);
+  if (sonuc?.durum !== 'olasi' || !sonuc.metin || madde.mushaftanDuzeltildi) return null;
+
+  return (
+    <div className="mt-2 rounded-lg border border-amber-300/60 bg-amber-50/60 px-2.5 py-2 dark:border-amber-800/60 dark:bg-amber-950/30">
+      <p className="text-[11px] font-medium text-amber-800 dark:text-amber-300">
+        Mushaftaki en yakın âyet — {sonuc.kunye}
+      </p>
+      <p
+        dir="rtl"
+        lang="ar"
+        className="arapca mt-1 text-right text-[19px] leading-loose text-zinc-800 dark:text-zinc-100"
+      >
+        {sonuc.metin}
+      </p>
+      {uygula ? (
+        <button
+          type="button"
+          onClick={() => uygula(madde.id, sonuc)}
+          className="mt-1.5 text-[11px] font-medium text-amber-800 underline underline-offset-2 dark:text-amber-300"
+        >
+          Bu metni kullan
+        </button>
+      ) : null}
     </div>
   );
 }

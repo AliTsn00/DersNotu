@@ -96,6 +96,24 @@ doğrulanabiliyor. Nottaki her Arapça ibare 6.236 âyetle karşılaştırılır
 | **Kur'ân'da bulunamadı** | Âyet olduğu söylenen ibare Kur'ân'da yok. |
 | **Latin harfli — karşılaştırılamadı** | Çeviri yazı; Arap harfi olmadan kıyas yapılamaz. |
 
+**Doğrulanan âyet mushaf metniyle düzeltilir.** Konuşma tanıma tilaveti çoğu
+zaman bozuk yazar; bozuk bir âyetin notta kalması, onu okuyan için yanlış bilgi
+demektir. İbare Kur'ân'da birebir bulunduysa yerine resmî imlâsı konur — bu
+tahmin değil, doğrulanmış metni yazmaktır. Üç sınır korunur:
+
+- Yalnızca **kesin** eşleşme kendiliğinden değiştirilir. Yaklaşık eşleşmede
+  mushaftaki en yakın âyet gösterilir ve uygulama kararı okuyana bırakılır;
+  motor bambaşka bir âyeti en yakın sayabilir.
+- İbare âyetin küçük bir parçasıysa (%60'ından azı) metne dokunulmaz, yalnızca
+  künyesi yazılır. Parçayı tam âyetle değiştirmek düzeltmek değil, bilgi
+  eklemek olurdu.
+- Özgün metin saklanır; alıntı kutusundaki bağlantıdan tanımanın ne yazdığı
+  görülebilir.
+
+Düzeltme kaydedilen nota değil, notun türetilmiş bir kopyasına uygulanır: ham
+metin arşivde olduğu gibi durur, düzeltme her açılışta doğrulamadan yeniden
+üretilir.
+
 Metin [Tanzil.net](https://tanzil.net)'in denetlenmiş sürümüdür — gösterim için Uthmani
 (resmî imlâ), karşılaştırma için sade imlâ. İkisi ayrı olmak zorunda: Uthmani uzun elifi
 üst simgeyle yazıyor (`ٱلصَّٰبِرِينَ`), yaygın yazım elifle (`الصابرين`). Metin
