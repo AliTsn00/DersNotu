@@ -2,6 +2,7 @@
 
 import { Alan, Kart, girdiSinifi } from './parcalar.jsx';
 import { ekranKilidiVarMi } from '../core/ekran.js';
+import { CEVIRIM_SERVISLERI } from '../core/kayitci.js';
 
 const DILLER = [
   { id: 'tr-TR', ad: 'Türkçe (Türkiye)' },
@@ -30,6 +31,17 @@ function Anahtar({ etiket, aciklama, isaretli, degistir }) {
 
 export default function AyarEkrani({ ayarlar, guncelle }) {
   const ayarla = (alan) => (deger) => guncelle({ ...ayarlar, [alan]: deger });
+
+  /** Hazır servisi seçer: adres ve model birlikte değişmeli. */
+  const servisSec = (anahtar) => {
+    const servis = CEVIRIM_SERVISLERI[anahtar];
+    guncelle({ ...ayarlar, cevirimUrl: servis.url, cevirimModel: servis.model });
+  };
+
+  const secili = Object.entries(CEVIRIM_SERVISLERI).find(
+    ([, servis]) => servis.url === ayarlar.cevirimUrl,
+  );
+  const seciliServis = secili?.[1];
 
   return (
     <div className="space-y-4">
@@ -79,17 +91,47 @@ export default function AyarEkrani({ ayarlar, guncelle }) {
           Ses dosyasını yazıya çevirme
         </h3>
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          Canlı dinleme yalnızca Chrome ve Edge’de çalışır. iPhone’da veya kaydedilmiş
-          dersler için OpenAI uyumlu bir servis kullanılır. Anahtar yalnızca bu cihazda
-          saklanır; ses dosyası doğrudan tarayıcıdan servise gider.
+          Uzun dersler için önerilen yol budur: dersi telefonun kendi ses kaydedicisiyle
+          kaydedin, sonra buradan yükleyin. Canlı dinleme 60 saniyede bir kesildiği için
+          kelime kaybeder. Anahtar yalnızca bu cihazda saklanır; ses dosyası doğrudan
+          tarayıcıdan servise gider.
         </p>
+
+        <Alan etiket="Servis">
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(CEVIRIM_SERVISLERI).map(([id, servis]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => servisSec(id)}
+                className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+                  seciliServis === servis
+                    ? 'border-indigo-600 bg-indigo-600 text-white'
+                    : 'border-zinc-300 text-zinc-700 hover:border-zinc-400 dark:border-zinc-600 dark:text-zinc-200'
+                }`}
+              >
+                {servis.ad}
+              </button>
+            ))}
+          </div>
+          {seciliServis && (
+            <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+              {seciliServis.aciklama} Anahtarı{' '}
+              <span className="font-medium text-zinc-700 dark:text-zinc-200">
+                {seciliServis.adres}
+              </span>{' '}
+              adresinden alırsınız. En büyük dosya: {seciliServis.enBuyukMB} MB
+              {seciliServis.enBuyukMB === 25 && ' (90 dakikalık bir ders, orta kalitede kaydedilirse sığar)'}.
+            </p>
+          )}
+        </Alan>
 
         <Alan etiket="API anahtarı" aciklama="Boş bırakırsanız ses dosyası yükleme kapalı kalır.">
           <input
             type="password"
             value={ayarlar.cevirimAnahtari}
             onChange={(olay) => ayarla('cevirimAnahtari')(olay.target.value)}
-            placeholder="sk-…"
+            placeholder={seciliServis === CEVIRIM_SERVISLERI.groq ? 'gsk_…' : 'sk-…'}
             autoComplete="off"
             className={girdiSinifi}
           />
@@ -116,12 +158,33 @@ export default function AyarEkrani({ ayarlar, guncelle }) {
 
       <Kart className="space-y-2">
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Gizlilik</h3>
-        <p className="text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-          Not çıkarma tamamen cihazınızda, kural tabanlı olarak çalışır — metin hiçbir
-          sunucuya gönderilmez. Canlı dinlemede sesi tarayıcının kendi konuşma tanıma
-          servisi işler. Kaydettiğiniz dersler tarayıcının yerel veritabanında (IndexedDB)
-          durur; tarayıcı verilerini silerseniz kayıtlar da silinir.
-        </p>
+        <ul className="space-y-1.5 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+          <li>
+            <span className="font-medium text-zinc-700 dark:text-zinc-200">
+              Not çıkarma cihazınızda kalır.
+            </span>{' '}
+            Metinden not üretme kural tabanlıdır ve tamamen çevrimdışı çalışır.
+          </li>
+          <li>
+            <span className="font-medium text-zinc-700 dark:text-zinc-200">
+              Ses ise dışarı çıkar.
+            </span>{' '}
+            Yüklediğiniz dosya seçtiğiniz çevirme servisine gider. Canlı dinlemede de
+            tarayıcı sesi Google’ın sunucularına gönderir — bu, tarayıcının kendi
+            davranışıdır ve kapatılamaz.
+          </li>
+          <li>
+            <span className="font-medium text-zinc-700 dark:text-zinc-200">
+              Kayıtlar bu cihazda durur.
+            </span>{' '}
+            Dersler tarayıcının yerel veritabanında (IndexedDB) saklanır; tarayıcı
+            verilerini silerseniz kayıtlar da silinir.
+          </li>
+          <li>
+            Dersinizde başka kişilerin sesi de kayda giriyorsa, sesi bir servise
+            göndermeden önce bunu göz önünde bulundurun.
+          </li>
+        </ul>
       </Kart>
     </div>
   );

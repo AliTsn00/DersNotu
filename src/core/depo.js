@@ -60,8 +60,10 @@ export const VARSAYILAN_AYARLAR = {
   dolguTemizle: true,
   ekraniAcikTut: true,
   sesKaydet: false,
-  cevirimModel: 'whisper-1',
-  cevirimUrl: 'https://api.openai.com/v1',
+  // Groq varsayılan: kalıcı ücretsiz katmanı bu iş için fazlasıyla yeterli
+  // (günde 8 saat ses) ve uç noktası OpenAI ile birebir uyumlu.
+  cevirimModel: 'whisper-large-v3',
+  cevirimUrl: 'https://api.groq.com/openai/v1',
   cevirimAnahtari: '',
 };
 

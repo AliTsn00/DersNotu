@@ -11,6 +11,9 @@ npm-debug.log*
 yarn-error.log*
 dist-tek
 
+# Playwright MCP'nin geçici çıktıları
+.playwright-mcp
+
 # /ders-notu skill'inin ara çıktıları — ders içeriği depoya girmesin
 ham.txt
 *.hazirlik.json

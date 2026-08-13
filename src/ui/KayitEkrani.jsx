@@ -61,6 +61,7 @@ export default function KayitEkrani({
   baslatDurdur,
   dosyaSec,
   cevriliyor,
+  cevirimiIptalEt,
   hata,
   canliDestekli,
   cerceveIcinde,
@@ -172,9 +173,20 @@ export default function KayitEkrani({
               dark:text-zinc-300"
           />
           {cevriliyor ? (
-            <p className="text-sm text-indigo-600 dark:text-indigo-400">
-              Ses yazıya çevriliyor, bu birkaç dakika sürebilir…
-            </p>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm text-indigo-600 dark:text-indigo-400">
+                Ses yazıya çevriliyor… Uzun dersler birkaç dakika sürebilir.
+              </p>
+              <button
+                type="button"
+                onClick={cevirimiIptalEt}
+                className="shrink-0 rounded-lg border border-zinc-300 px-3 py-1.5 text-xs
+                  font-medium text-zinc-700 hover:border-zinc-400
+                  dark:border-zinc-600 dark:text-zinc-200"
+              >
+                İptal
+              </button>
+            </div>
           ) : null}
         </Kart>
       ) : null}

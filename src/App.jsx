@@ -3,7 +3,7 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } f
 import { notCikar } from './turkce/index.js';
 import { duzenlemeyeAl, yeniMaddeleriKat } from './turkce/duzenle.js';
 import { Dinleyici, konusmaTanimaVarMi } from './core/dinleme.js';
-import { sesiYaziyaCevir } from './core/kayitci.js';
+import { sesiYaziyaCevir, CEVIRIM_SERVISLERI } from './core/kayitci.js';
 import { ekraniAcikTut, ekranKilidiniBirak, ekranKilidiniIzle } from './core/ekran.js';
 import {
   VARSAYILAN_AYARLAR,
@@ -49,6 +49,8 @@ export default function App() {
 
   const dinleyiciRef = useRef(null);
   const baslangicRef = useRef(0);
+  // Süren yazıya çevirme isteğini iptal edebilmek için.
+  const cevirimRef = useRef(null);
   const canliDestekli = useMemo(() => konusmaTanimaVarMi(), []);
   // Çerçeve (iframe) içinde açıldığında tarayıcı mikrofon izni sormaz.
   const cerceveIcinde = useMemo(() => {
@@ -163,16 +165,27 @@ export default function App() {
   }, [dinliyor, dinlemeyiBaslat, dinlemeyiDurdur]);
 
   // --- Ses dosyası ---------------------------------------------------------
+  const cevirimiIptalEt = useCallback(() => {
+    cevirimRef.current?.abort();
+  }, []);
+
   const dosyaSec = useCallback(
     async (dosya) => {
       hataAyarla('');
       cevriliyorAyarla(true);
+      const durdurucu = new AbortController();
+      cevirimRef.current = durdurucu;
       try {
+        const servis = Object.values(CEVIRIM_SERVISLERI).find(
+          (s) => s.url === ayarlar.cevirimUrl,
+        );
         const metin = await sesiYaziyaCevir(dosya, {
           anahtar: ayarlar.cevirimAnahtari,
           model: ayarlar.cevirimModel,
           temelUrl: ayarlar.cevirimUrl,
           dil: ayarlar.dil.slice(0, 2),
+          enBuyukMB: servis?.enBuyukMB ?? 25,
+          isaret: durdurucu.signal,
         });
         if (!metin) {
           hataAyarla('Serviste konuşma bulunamadı.');
@@ -188,6 +201,7 @@ export default function App() {
         hataAyarla(sorun.message || 'Ses yazıya çevrilemedi.');
       } finally {
         cevriliyorAyarla(false);
+        cevirimRef.current = null;
       }
     },
     [ayarlar],
@@ -339,6 +353,7 @@ export default function App() {
             baslatDurdur={baslatDurdur}
             dosyaSec={dosyaSec}
             cevriliyor={cevriliyor}
+            cevirimiIptalEt={cevirimiIptalEt}
             hata={hata}
             canliDestekli={canliDestekli}
             cerceveIcinde={cerceveIcinde}
