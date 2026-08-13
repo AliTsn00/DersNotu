@@ -66,6 +66,9 @@ tanımanın açıkça yanlış duyduğu kelimeleri bağlamdan düzeltebilirsin
 
 ARAPÇA KORUMA — İHLAL EDİLEMEZ:
 - ⟦AR:0⟧ gibi yer tutucuları AYNEN kopyala. İçeriğini tahmin etme, yazma, değiştirme.
+- SANA VERİLEN her yer tutucuyu MUTLAKA kullan. Bir cümlede ⟦AR:n⟧ geçiyorsa o
+  alıntı nota girmeli — atlama, özetleyip geçme. Âyetin/hadîsin Arapça metni
+  notun en değerli parçasıdır.
 - SANA VERİLMEYEN bir yer tutucuyu ASLA yazma. Yalnızca yukarıdaki cümlelerde
   gördüğün numaraları kullanabilirsin. Bir âyetten ya da hadîsten söz ediliyor
   ama metinde yer tutucu yoksa, o cümleyi normal "madde" türünde yaz.
@@ -336,9 +339,10 @@ export function yerTutucuNotu(cumleler) {
     ),
   ];
   return bulunanlar.length
-    ? `\nBu parçada kullanabileceğin yer tutucular yalnızca şunlar: ${bulunanlar
+    ? `\nBu parçadaki yer tutucular: ${bulunanlar
         .map((anahtar) => `⟦${anahtar}⟧`)
-        .join(', ')}. Başka bir yer tutucu yazma.`
+        .join(', ')}. Her biri çıktında bir kez geçmeli — hiçbirini atlama. ` +
+      'Bunların dışında bir yer tutucu yazma.'
     : '\nBu parçada hiç Arapça yer tutucu yok. Çıktında ⟦AR:...⟧ biçiminde hiçbir şey yazma.';
 }
 

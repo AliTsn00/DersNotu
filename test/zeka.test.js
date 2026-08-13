@@ -10,7 +10,10 @@ describe('yerTutucuNotu', () => {
       { metin: 'Sonra ⟦AR:4⟧ dedi.' },
     ]);
     expect(not).toContain('⟦AR:3⟧, ⟦AR:4⟧');
-    expect(not).toContain('Başka bir yer tutucu yazma');
+    // Hem atlamayı hem uydurmayı engellemeli: tek yönlü uyarı, modeli
+    // alıntıları büsbütün atlamaya itiyor.
+    expect(not).toContain('hiçbirini atlama');
+    expect(not).toContain('dışında bir yer tutucu yazma');
   });
 
   it('yer tutucu yoksa açıkça yasaklar', () => {
