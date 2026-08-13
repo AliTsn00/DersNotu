@@ -367,6 +367,21 @@ Gerekirse birincil aday **Cloudflare Workers AI**. Ama şunu bilin: Türkçe öl
 
 > İlginç bir bulgu: Türkçe'ye özel eğitilmiş küçük modeller (Trendyol-LLM %34) genel amaçlı büyük modellerin **çok altında** kalıyor. Türkçe için "Türkçe modeli" değil, güçlü genel model seçmek gerekiyor.
 
+### 6.1 Uygulamada çözülen engel: tarayıcı Cloudflare'e doğrudan bağlanamıyor
+
+Telefondaki otomatik not çıkarma ilk denemede çalışmadı. Sebep anahtar değildi:
+Cloudflare'in API'si tarayıcının ön kontrol (OPTIONS) isteğine `405` dönüyor ve
+hiçbir CORS başlığı göndermiyor — **ölçüldü, 13 Ağustos 2026**. Tarayıcı bu
+yüzden isteği daha yola çıkmadan engelliyor.
+
+Çözüm: kullanıcının kendi hesabında çalışan 60 satırlık bir aracı Worker
+([`worker/zeka-araci.js`](worker/zeka-araci.js), kurulumu
+[`worker/KURULUM.md`](worker/KURULUM.md)). İsteği aynen iletir, cevaba izin
+başlıklarını ekler. Worker'ların ücretsiz katmanı günde 100.000 istek; bu iş
+için fazlasıyla yeterli. Anahtar Worker'da saklanmaz — `Authorization` başlığı
+olduğu gibi aktarılır, dolayısıyla adresi bilen biri kendi anahtarı olmadan
+kotayı harcayamaz.
+
 ---
 
 ## 7. Sırada ne var
