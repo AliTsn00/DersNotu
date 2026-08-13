@@ -5,7 +5,12 @@
 // göndermiyor, bu yüzden tarayıcı isteği daha yola çıkmadan engelliyor.
 // Bu Worker isteği aynen iletir, cevaba CORS başlıklarını ekler.
 //
-// Kurulumu: worker/KURULUM.md
+// Kurulumu: ARACI-KURULUM.md
+//
+// ⚠️ Türkiye'den workers.dev alt alanına erişilemiyor (TLS bağlantısı
+// sıfırlanıyor, ölçüldü 13 Ağustos 2026). Bu yüzden kullanımdaki aracı Vercel
+// sürümü: api/zeka/[...yol].js. Bu dosya, engel kalkarsa ya da yurt dışından
+// kullanılırsa diye duruyor.
 //
 // Güvenlik notu: anahtar burada saklanmaz. Tarayıcıdan gelen Authorization
 // başlığı olduğu gibi iletilir; adresi bilen biri kendi anahtarı olmadan

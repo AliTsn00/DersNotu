@@ -98,7 +98,7 @@ export default function NotEkrani({
             <p className="text-xs text-amber-800 dark:text-amber-300/90">
               Açmak için <strong>Ayarlar → Yapay zekâ ile not çıkarma</strong> bölümüne
               Cloudflare hesap kimliğinizi, anahtarınızı ve aracı adresini girin.
-              Üçü de ücretsiz; kurulum depodaki <strong>worker/KURULUM.md</strong>{' '}
+              Üçü de ücretsiz; kurulum depodaki <strong>ARACI-KURULUM.md</strong>{' '}
               dosyasında anlatılıyor.
             </p>
           ) : null}

@@ -215,7 +215,7 @@ export default function AyarEkrani({ ayarlar, guncelle }) {
 
         <Alan
           etiket="Aracı adresi (zorunlu)"
-          aciklama="Cloudflare tarayıcıdan doğrudan çağrılamıyor. Kendi hesabınızda ücretsiz bir Worker kurulur; kurulumu depoda worker/KURULUM.md dosyasında."
+          aciklama="Cloudflare tarayıcıdan doğrudan çağrılamıyor. İstekler kendi kuracağınız ücretsiz bir aracıdan geçer; kurulumu depodaki ARACI-KURULUM.md dosyasında. Sondaki /api/zeka ekini unutmayın."
         >
           <input
             type="url"
