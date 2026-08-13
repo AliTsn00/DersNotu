@@ -96,6 +96,39 @@ bilgi, ayet, hadis, dua, arapca, gorus.
 - ornek türünde metin "Örnek: ..." ile başlar.`;
 
 /**
+ * Cloudflare'in yanıt gövdesinden model çıktısını alır.
+ *
+ * Alanın adı modele göre değişiyor: kimi `response`, kimi `output_text`, kimi
+ * OpenAI biçiminde `choices[].message.content` döndürüyor. `response` bazen
+ * metin değil, çözülmüş nesne oluyor — o hâlde olduğu gibi aktarılır, çünkü
+ * metne çevirmeye çalışmak "[object Object]" üretir.
+ */
+export function ciktiyiAl(sonuc) {
+  if (sonuc == null) return '';
+  if (typeof sonuc === 'string') return sonuc;
+
+  for (const aday of [sonuc.response, sonuc.output_text, sonuc.text, sonuc.content]) {
+    if (typeof aday === 'string' && aday.trim()) return aday;
+    if (aday && typeof aday === 'object') return aday;
+  }
+
+  const ileti = sonuc.choices?.[0]?.message?.content;
+  if (typeof ileti === 'string' && ileti.trim()) return ileti;
+
+  // gpt-oss biçimi: output[].content[].text
+  if (Array.isArray(sonuc.output)) {
+    const metinler = sonuc.output
+      .flatMap((oge) => (Array.isArray(oge?.content) ? oge.content : []))
+      .map((parca) => parca?.text)
+      .filter((metin) => typeof metin === 'string' && metin.trim());
+    if (metinler.length) return metinler.join('\n');
+  }
+
+  // Tanınmayan yapı: olduğu gibi geçilir, hata mesajı yapıyı gösterebilsin.
+  return sonuc;
+}
+
+/**
  * Yarıda kesilmiş JSON için kurtarma adayları üretir. Model yanıt sınırına
  * takıldığında çıktı bir dizginin ya da nesnenin ortasında biter; açık kalanlar
  * kapatılırsa notun tamamlanmış kısmı kurtarılabilir.
@@ -140,6 +173,14 @@ export function jsonKurtarmaAdaylari(metin) {
 
 /** Modelin yanıtından JSON gövdesini ayıklar. */
 export function jsonAyikla(ham) {
+  // JSON kipinde model çıktısı çözülmüş nesne olarak gelebiliyor.
+  if (ham && typeof ham === 'object') {
+    if (Array.isArray(ham.bolumler)) return ham;
+    throw new Error(
+      `Model beklenen yapıyı döndürmedi: ${JSON.stringify(ham).slice(0, 200)}`,
+    );
+  }
+
   let metin = String(ham || '').trim();
   // Bazı modeller yanıtı kod bloğuna sarar.
   const blok = metin.match(/```(?:json)?\s*([\s\S]*?)```/);
@@ -253,7 +294,7 @@ async function modeliCagir(ayarlar, mesajlar, isaret) {
     const ilk = veri.errors?.[0]?.message || 'bilinmeyen hata';
     throw new Error(`Yapay zekâ isteği reddedildi: ${ilk}`);
   }
-  return veri.result?.response ?? veri.result?.output_text ?? '';
+  return ciktiyiAl(veri.result);
 }
 
 /** Cümleleri modele verilecek metne çevirir. */

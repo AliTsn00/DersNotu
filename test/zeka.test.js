@@ -1,6 +1,32 @@
 import { describe, expect, it } from 'vitest';
 
-import { jsonAyikla, jsonKurtarmaAdaylari } from '../src/core/zeka.js';
+import { ciktiyiAl, jsonAyikla, jsonKurtarmaAdaylari } from '../src/core/zeka.js';
+
+describe('ciktiyiAl', () => {
+  it('response alanındaki metni alır', () => {
+    expect(ciktiyiAl({ response: '{"a":1}' })).toBe('{"a":1}');
+  });
+
+  it('response nesne ise metne çevirmeden aktarır', () => {
+    // String(...) uygulanırsa "[object Object]" olur ve yanıt kaybolur.
+    const nesne = { bolumler: [] };
+    expect(ciktiyiAl({ response: nesne })).toBe(nesne);
+  });
+
+  it('OpenAI biçimindeki yanıtı okur', () => {
+    const sonuc = { choices: [{ message: { content: '{"a":1}' } }] };
+    expect(ciktiyiAl(sonuc)).toBe('{"a":1}');
+  });
+
+  it('gpt-oss biçimindeki output dizisini birleştirir', () => {
+    const sonuc = { output: [{ content: [{ text: 'bir' }, { text: 'iki' }] }] };
+    expect(ciktiyiAl(sonuc)).toBe('bir\niki');
+  });
+
+  it('boş yanıtta boş dizgi döner', () => {
+    expect(ciktiyiAl(null)).toBe('');
+  });
+});
 
 describe('jsonAyikla', () => {
   it('düz JSON okur', () => {
@@ -45,6 +71,15 @@ describe('jsonAyikla', () => {
 
   it('boş yanıtı ayırt eder', () => {
     expect(() => jsonAyikla('')).toThrow(/boş yanıt/);
+  });
+
+  it('çözülmüş nesneyi olduğu gibi kabul eder', () => {
+    const nesne = { baslik: 'Ders', bolumler: [] };
+    expect(jsonAyikla(nesne)).toBe(nesne);
+  });
+
+  it('beklenen alanları taşımayan nesnede yapıyı hataya koyar', () => {
+    expect(() => jsonAyikla({ usage: { tokens: 12 } })).toThrow(/usage/);
   });
 });
 
