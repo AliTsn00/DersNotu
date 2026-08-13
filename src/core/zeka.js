@@ -36,8 +36,10 @@ export const ZEKA_MODELLERI = {
   },
 };
 
-/** Bir istekte modele verilecek en fazla cümle sayısı. */
-const PARCA_CUMLE = 55;
+// Bir istekte modele verilecek en fazla cümle sayısı. 55 denendi: üretilen JSON
+// yanıt sınırına takılıp yarıda kesiliyordu. 30 cümle, dolu bir bölüm çıkarmaya
+// yetiyor ve çıktı rahatça sığıyor.
+const PARCA_CUMLE = 30;
 const ZAMAN_ASIMI_MS = 3 * 60 * 1000;
 
 const YONERGE = `Sen bir Türkçe ders notu editörüsün. Sana bir dersin konuşma çözümü
@@ -93,19 +95,82 @@ bilgi, ayet, hadis, dua, arapca, gorus.
   kunye alanına varsa kaynak yazılır ("Bakara 153", "Müslim").
 - ornek türünde metin "Örnek: ..." ile başlar.`;
 
+/**
+ * Yarıda kesilmiş JSON için kurtarma adayları üretir. Model yanıt sınırına
+ * takıldığında çıktı bir dizginin ya da nesnenin ortasında biter; açık kalanlar
+ * kapatılırsa notun tamamlanmış kısmı kurtarılabilir.
+ */
+export function jsonKurtarmaAdaylari(metin) {
+  let dizgide = false;
+  let kacis = false;
+  const yigin = [];
+  for (const harf of metin) {
+    if (kacis) {
+      kacis = false;
+      continue;
+    }
+    if (harf === '\\') {
+      kacis = true;
+      continue;
+    }
+    if (harf === '"') {
+      dizgide = !dizgide;
+      continue;
+    }
+    if (dizgide) continue;
+    if (harf === '{' || harf === '[') yigin.push(harf);
+    else if (harf === '}' || harf === ']') yigin.pop();
+  }
+
+  const kapat = (govde) => {
+    let sonuc = govde;
+    for (let i = yigin.length - 1; i >= 0; i -= 1) sonuc += yigin[i] === '{' ? '}' : ']';
+    return sonuc;
+  };
+
+  const adaylar = [];
+  // Kesilme bir dizginin ortasındaysa önce dizgi kapatılır.
+  if (dizgide) adaylar.push(kapat(`${metin}"`));
+  adaylar.push(kapat(metin));
+  // Yarım kalan anahtar/değer çifti varsa son virgülden itibarı atılır.
+  const sonVirgul = metin.lastIndexOf(',');
+  if (sonVirgul > 0) adaylar.push(kapat(metin.slice(0, sonVirgul)));
+  return adaylar;
+}
+
 /** Modelin yanıtından JSON gövdesini ayıklar. */
-function jsonAyikla(ham) {
+export function jsonAyikla(ham) {
   let metin = String(ham || '').trim();
   // Bazı modeller yanıtı kod bloğuna sarar.
   const blok = metin.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (blok) metin = blok[1].trim();
-  // Baştaki açıklama cümlelerini at: ilk { ile son } arasını al.
+  // Baştaki açıklama cümlelerini at.
   const bas = metin.indexOf('{');
-  const son = metin.lastIndexOf('}');
-  if (bas === -1 || son === -1 || son < bas) {
-    throw new Error('Model geçerli JSON döndürmedi.');
+  if (bas === -1) {
+    throw new Error(
+      `Model JSON döndürmedi. Yanıtın başı: ${metin.slice(0, 200) || '(boş yanıt)'}`,
+    );
   }
-  return JSON.parse(metin.slice(bas, son + 1));
+
+  const govde = metin.slice(bas);
+  const son = govde.lastIndexOf('}');
+  if (son !== -1) {
+    try {
+      return JSON.parse(govde.slice(0, son + 1));
+    } catch {
+      // Yarıda kesilmiş olabilir; aşağıda kurtarma denenir.
+    }
+  }
+  for (const aday of jsonKurtarmaAdaylari(govde)) {
+    try {
+      return JSON.parse(aday);
+    } catch {
+      // Sıradaki adaya geç.
+    }
+  }
+  throw new Error(
+    `Model geçerli JSON döndürmedi (${metin.length} karakterlik yanıt kurtarılamadı). Başı: ${metin.slice(0, 150)}`,
+  );
 }
 
 /** Cloudflare Workers AI'ye bir sohbet isteği gönderir. */
