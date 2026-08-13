@@ -63,6 +63,8 @@ export default function KayitEkrani({
   cevriliyor,
   cevirimiIptalEt,
   hata,
+  kurtarilan,
+  kurtarilaniKapat,
   canliDestekli,
   cerceveIcinde,
   ornekYukle,
@@ -70,6 +72,14 @@ export default function KayitEkrani({
 }) {
   const cumleSayisi = hamMetin.split('\n').filter(Boolean).length;
   const kelimeSayisi = hamMetin.split(/\s+/).filter(Boolean).length;
+  const kurtarilanZaman = kurtarilan
+    ? new Date(kurtarilan).toLocaleString('tr-TR', {
+        day: 'numeric',
+        month: 'long',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : '';
 
   return (
     <div className="space-y-4">
@@ -100,6 +110,24 @@ export default function KayitEkrani({
         <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/50 dark:text-red-300">
           {hata}
         </p>
+      ) : null}
+
+      {kurtarilan ? (
+        <div className="flex items-start justify-between gap-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
+          <p>
+            Kaydedilmemiş bir ders bulundu ve geri yüklendi
+            {kurtarilanZaman ? ` (${kurtarilanZaman})` : ''}. Arşive almak için{' '}
+            <strong>Not</strong> sekmesinden <strong>Kaydet</strong>’e basın.
+          </p>
+          <button
+            type="button"
+            onClick={kurtarilaniKapat}
+            aria-label="Bildirimi kapat"
+            className="shrink-0 rounded-lg px-2 py-0.5 text-lg leading-none hover:bg-amber-100 dark:hover:bg-amber-900/50"
+          >
+            ×
+          </button>
+        </div>
       ) : null}
 
       {mod === 'canli' ? (

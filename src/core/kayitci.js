@@ -1,73 +1,13 @@
-// Ses kaydı (MediaRecorder) ve dosyadan yazıya çevirme.
+// Kaydedilmiş ders sesini yazıya çevirme.
 //
-// iOS Safari canlı konuşma tanımayı desteklemediği için bu yol kullanılır:
-// ders kaydedilir, ardından OpenAI uyumlu bir yazıya çevirme servisine gönderilir.
-
-export const kayitVarMi = () =>
-  typeof window !== 'undefined' &&
-  Boolean(navigator.mediaDevices?.getUserMedia) &&
-  typeof MediaRecorder !== 'undefined';
-
-/** Tarayıcının desteklediği ilk ses biçimini seçer. */
-function bicimSec() {
-  const adaylar = [
-    'audio/webm;codecs=opus',
-    'audio/webm',
-    'audio/mp4',
-    'audio/ogg;codecs=opus',
-  ];
-  return adaylar.find((tip) => MediaRecorder.isTypeSupported?.(tip)) || '';
-}
-
-export class SesKaydedici {
-  constructor() {
-    this.kaydedici = null;
-    this.akis = null;
-    this.parcalar = [];
-  }
-
-  async baslat() {
-    this.akis = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: true, noiseSuppression: true },
-    });
-    const mimeType = bicimSec();
-    this.parcalar = [];
-    this.kaydedici = new MediaRecorder(this.akis, mimeType ? { mimeType } : undefined);
-    this.kaydedici.ondataavailable = (olay) => {
-      if (olay.data?.size) this.parcalar.push(olay.data);
-    };
-    this.kaydedici.start(1000);
-  }
-
-  /** @returns {Promise<Blob|null>} */
-  durdur() {
-    return new Promise((cozumle) => {
-      if (!this.kaydedici || this.kaydedici.state === 'inactive') {
-        cozumle(null);
-        return;
-      }
-      this.kaydedici.onstop = () => {
-        const tip = this.kaydedici.mimeType || 'audio/webm';
-        const ses = new Blob(this.parcalar, { type: tip });
-        this.akis?.getTracks().forEach((iz) => iz.stop());
-        this.akis = null;
-        cozumle(ses);
-      };
-      this.kaydedici.stop();
-    });
-  }
-
-  vazgec() {
-    try {
-      this.kaydedici?.stop();
-    } catch {
-      // yoksay
-    }
-    this.akis?.getTracks().forEach((iz) => iz.stop());
-    this.akis = null;
-    this.parcalar = [];
-  }
-}
+// Uzun dersler için önerilen yol budur: ders telefonun kendi ses kaydedicisiyle
+// kaydedilir (arka planda çalışan tek güvenilir yol), sonra buradan yüklenir.
+// Canlı dinleme 60 saniyede bir kesildiği için kelime kaybeder; iOS Safari'de
+// ise hiç çalışmaz.
+//
+// Tarayıcı içi MediaRecorder ile kayıt bilinçli olarak kaldırıldı: sekme arka
+// plana alındığında ya da ekran kapandığında kayıt sessizce ölüyor, bu da
+// 90 dakikalık bir dersi kaybetmek demek. Ayrıntı için YOL-HARITASI.md.
 
 const UZANTILAR = {
   'audio/webm': 'webm',

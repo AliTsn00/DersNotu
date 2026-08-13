@@ -295,13 +295,33 @@ derste Groq'un Türkçe kalitesi ve Arapça ibarelerin çıktısı ölçülecek.
 
 ---
 
-### Aşama 4 — Cilalama (isteğe bağlı)
+### Aşama 4 — Cilalama ✅ TAMAMLANDI (13 Ağustos 2026)
 
-- [ ] Telefondan PC'ye dosya aktarımını kolaylaştır (Drive klasörü / USB / Web Share Target)
-- [x] ~~Ayarlardaki "metin hiçbir sunucuya gönderilmez" ifadesini güncelle~~ (Aşama 2'de yapıldı)
-- [ ] IndexedDB'ye sürüm alanı + migrasyon iskeleti (şu an yok, ileride başınızı ağrıtır)
-- [ ] Otomatik kaydetme — şu an sekmeyi kapatınca ham metin gidiyor
-- [ ] `kayitci.js`'teki ölü kodu temizle: `SesKaydedici` sınıfı yazılmış ama hiçbir yerden çağrılmıyor, `sesKaydet` ayarı hiç okunmuyor
+- [x] **Otomatik kaydetme.** Ham metin, elle düzenlemeler ve süre `localStorage`'a
+      yazılıyor: sayfa kapanırken (`pagehide`) anında, yazarken 1,5 saniye gecikmeli.
+      Açılışta kaldığı yerden geri yükleniyor ve kullanıcıya bildiriliyor.
+      Kaydet ya da Sıfırla taslağı temizliyor.
+      *(IndexedDB değil localStorage: IndexedDB eşzamansızdır, sayfa kapanırken
+      yazma sözü tamamlanmaz.)*
+- [x] **IndexedDB sürümleme.** Şema sürümü 2'ye çıkarıldı, adım adım yükseltme
+      iskeleti kuruldu, kayıtlara şema damgası basılıyor. İlk gerçek göç de
+      yazıldı: sürüm 1 kayıtlarına geriye dönük damga.
+- [x] **Ölü kod temizlendi.** `SesKaydedici`, `kayitVarMi`, `bicimSec` ve
+      `sesKaydet` ayarı kaldırıldı — hiçbiri çağrılmıyordu.
+- [x] ~~Ayarlardaki gizlilik metnini güncelle~~ (Aşama 2'de yapıldı)
+
+**Neden tarayıcı içi kayıt canlandırılmadı:** Sekme arka plana alındığında ya da
+ekran kapandığında `MediaRecorder` sessizce ölüyor. Çalışıyormuş gibi görünüp
+90 dakikalık dersi kaybetmek, özelliği hiç sunmamaktan kötü. Telefonun kendi
+kaydedicisi bu işi güvenilir biçimde yapıyor.
+
+---
+
+### Aşama 5 — Kalanlar
+
+- [ ] **Gerçek bir ders kaydıyla uçtan uca deneme** ← en değerlisi
+- [ ] Telefondan PC'ye dosya aktarımını kolaylaştır (Web Share Target)
+- [ ] Buzz yedeği — PC'de tamamen offline çeviri
 
 ---
 

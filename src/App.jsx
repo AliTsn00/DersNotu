@@ -13,6 +13,9 @@ import {
   dersSil,
   dersleriGetir,
   yeniKimlik,
+  taslakOku,
+  taslakYaz,
+  taslakSil,
 } from './core/depo.js';
 
 import KayitEkrani from './ui/KayitEkrani.jsx';
@@ -46,6 +49,8 @@ export default function App() {
   // Elle düzenlenmiş not; doluysa otomatik notun yerine o gösterilir.
   const [elleNot, elleNotAyarla] = useState(null);
   const [duzenleniyor, duzenleniyorAyarla] = useState(false);
+  // Kurtarılan taslağın zaman damgası; 0 ise kurtarma olmadı.
+  const [kurtarilan, kurtarilanAyarla] = useState(0);
 
   const dinleyiciRef = useRef(null);
   const baslangicRef = useRef(0);
@@ -98,6 +103,42 @@ export default function App() {
   useEffect(() => {
     arsiviTazele();
   }, [arsiviTazele]);
+
+  // --- Kaydedilmemiş taslak ------------------------------------------------
+  //
+  // Ders sürerken sekme kapanabilir, telefon uygulamayı bellekten atabilir.
+  // Kaydet düğmesine basılmadıysa ham metin bugüne kadar kayboluyordu.
+
+  // Açılışta yarım kalmış ders varsa geri yükle.
+  useEffect(() => {
+    const taslak = taslakOku();
+    if (!taslak) return;
+    hamMetinAyarla(taslak.hamMetin);
+    if (taslak.elleNot) elleNotAyarla(taslak.elleNot);
+    if (taslak.aktifId) aktifIdAyarla(taslak.aktifId);
+    if (taslak.sure) sureAyarla(taslak.sure);
+    kurtarilanAyarla(taslak.zaman || 0);
+  }, []);
+
+  // Olay dinleyicileri eski closure'a takılmasın diye güncel hâl ref'te durur.
+  const taslakRef = useRef(null);
+  useEffect(() => {
+    taslakRef.current = { hamMetin, elleNot, aktifId, sure };
+  });
+
+  // Sayfa kapanırken gecikmeli yazmayı bekleyemeyiz; anında yaz.
+  useEffect(() => {
+    const yaz = () => taslakYaz(taslakRef.current);
+    window.addEventListener('pagehide', yaz);
+    return () => window.removeEventListener('pagehide', yaz);
+  }, []);
+
+  // Metin değiştikçe gecikmeli yaz: canlı dinlemede metin saniyede birkaç kez
+  // değişiyor, her değişimde depolamaya yazmak gereksiz.
+  useEffect(() => {
+    const zamanlayici = setTimeout(() => taslakYaz(taslakRef.current), 1500);
+    return () => clearTimeout(zamanlayici);
+  }, [hamMetin, elleNot, aktifId]);
 
   // --- Süre sayacı ---------------------------------------------------------
   useEffect(() => {
@@ -218,6 +259,8 @@ export default function App() {
     elleNotAyarla(null);
     duzenleniyorAyarla(false);
     hataAyarla('');
+    kurtarilanAyarla(0);
+    taslakSil();
   }, [dinlemeyiDurdur]);
 
   const ornekYukle = useCallback((ornek) => {
@@ -226,6 +269,7 @@ export default function App() {
     aktifIdAyarla(null);
     elleNotAyarla(null);
     duzenleniyorAyarla(false);
+    kurtarilanAyarla(0);
     sekmeAyarla('not');
   }, []);
 
@@ -246,6 +290,9 @@ export default function App() {
     });
     aktifIdAyarla(id);
     arsiviTazele();
+    // Ders arşive girdi; taslak artık kaybolabilecek bir şey değil.
+    kurtarilanAyarla(0);
+    taslakSil();
   }, [not, elleNot, aktifId, sure, hamMetin, ayarlar.detay, arsiviTazele]);
 
   const arsivAc = useCallback(
@@ -256,6 +303,7 @@ export default function App() {
       aktifIdAyarla(ders.id);
       elleNotAyarla(ders.elleNot || null);
       duzenleniyorAyarla(false);
+      kurtarilanAyarla(0);
       sekmeAyarla('not');
     },
     [dinlemeyiDurdur],
@@ -354,6 +402,8 @@ export default function App() {
             dosyaSec={dosyaSec}
             cevriliyor={cevriliyor}
             cevirimiIptalEt={cevirimiIptalEt}
+            kurtarilan={kurtarilan}
+            kurtarilaniKapat={() => kurtarilanAyarla(0)}
             hata={hata}
             canliDestekli={canliDestekli}
             cerceveIcinde={cerceveIcinde}

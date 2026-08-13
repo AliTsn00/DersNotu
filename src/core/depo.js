@@ -2,21 +2,45 @@
 // Tüm veri cihazda kalır; hiçbir sunucuya gönderilmez.
 
 const VERITABANI = 'ders-notu';
-const SURUM = 1;
+const SURUM = 2;
 const DEPO = 'dersler';
 
+/**
+ * Yeni kayıtlara basılan şema damgası. İleride bir alanın anlamı değişirse,
+ * hangi kaydın hangi şemadan geldiği bu alandan bilinir ve dönüşüm yalnızca
+ * eski kayıtlara uygulanır.
+ */
+export const KAYIT_SURUMU = 1;
+
 let baglantiSozu = null;
+
+/**
+ * Şema yükseltmeleri. Her adım kendi koşuluyla çalışır ve atlanabilir olmalı:
+ * kullanıcı sürüm 1'den de gelebilir, hiç veritabanı olmayan durumdan da.
+ */
+function surumYukselt(veritabani, hareket, eskiSurum) {
+  if (eskiSurum < 1) {
+    const depo = veritabani.createObjectStore(DEPO, { keyPath: 'id' });
+    depo.createIndex('tarih', 'tarih');
+  }
+  if (eskiSurum < 2) {
+    // Sürüm 1 kayıtlarında damga yok; geriye dönük olarak basılır.
+    const depo = hareket.objectStore(DEPO);
+    depo.openCursor().onsuccess = (olay) => {
+      const imlec = olay.target.result;
+      if (!imlec) return;
+      if (imlec.value?.surum == null) imlec.update({ ...imlec.value, surum: 1 });
+      imlec.continue();
+    };
+  }
+}
 
 function baglan() {
   if (baglantiSozu) return baglantiSozu;
   baglantiSozu = new Promise((cozumle, reddet) => {
     const istek = indexedDB.open(VERITABANI, SURUM);
-    istek.onupgradeneeded = () => {
-      const veritabani = istek.result;
-      if (!veritabani.objectStoreNames.contains(DEPO)) {
-        const depo = veritabani.createObjectStore(DEPO, { keyPath: 'id' });
-        depo.createIndex('tarih', 'tarih');
-      }
+    istek.onupgradeneeded = (olay) => {
+      surumYukselt(istek.result, istek.transaction, olay.oldVersion);
     };
     istek.onsuccess = () => cozumle(istek.result);
     istek.onerror = () => reddet(istek.error);
@@ -36,7 +60,8 @@ function islem(kip, calistir) {
   );
 }
 
-export const dersKaydet = (ders) => islem('readwrite', (depo) => depo.put(ders));
+export const dersKaydet = (ders) =>
+  islem('readwrite', (depo) => depo.put({ surum: KAYIT_SURUMU, ...ders }));
 export const dersSil = (id) => islem('readwrite', (depo) => depo.delete(id));
 export const dersGetir = (id) => islem('readonly', (depo) => depo.get(id));
 
@@ -59,7 +84,6 @@ export const VARSAYILAN_AYARLAR = {
   detay: 'orta',
   dolguTemizle: true,
   ekraniAcikTut: true,
-  sesKaydet: false,
   // Groq varsayılan: kalıcı ücretsiz katmanı bu iş için fazlasıyla yeterli
   // (günde 8 saat ses) ve uç noktası OpenAI ile birebir uyumlu.
   cevirimModel: 'whisper-large-v3',
@@ -81,5 +105,45 @@ export function ayarlariYaz(ayarlar) {
     localStorage.setItem(AYAR_ANAHTARI, JSON.stringify(ayarlar));
   } catch {
     // depolama kapalıysa sessizce geç
+  }
+}
+
+// --- Kaydedilmemiş taslak ----------------------------------------------------
+//
+// Ders sürerken sekme kapanırsa, tarayıcı sekmeyi bellekten atarsa ya da telefon
+// uygulamayı öldürürse ham metin kaybolurdu. Taslak bu yüzden localStorage'da
+// tutulur: IndexedDB eşzamansızdır ve sayfa kapanırken yazma sözü tamamlanmaz,
+// localStorage ise eşzamanlı olduğu için `pagehide` anında güvenle yazar.
+
+const TASLAK_ANAHTARI = 'ders-notu:taslak';
+
+export function taslakYaz(taslak) {
+  try {
+    if (!taslak?.hamMetin?.trim()) {
+      localStorage.removeItem(TASLAK_ANAHTARI);
+      return;
+    }
+    localStorage.setItem(TASLAK_ANAHTARI, JSON.stringify({ ...taslak, zaman: Date.now() }));
+  } catch {
+    // kota dolabilir; taslak kaybı uygulamayı durduracak kadar önemli değil
+  }
+}
+
+export function taslakOku() {
+  try {
+    const ham = localStorage.getItem(TASLAK_ANAHTARI);
+    if (!ham) return null;
+    const taslak = JSON.parse(ham);
+    return taslak?.hamMetin ? taslak : null;
+  } catch {
+    return null;
+  }
+}
+
+export function taslakSil() {
+  try {
+    localStorage.removeItem(TASLAK_ANAHTARI);
+  } catch {
+    // yoksay
   }
 }
