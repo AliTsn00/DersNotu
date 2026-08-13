@@ -1,5 +1,7 @@
 // Uygulama ayarları. Her şey tarayıcıda (localStorage) saklanır.
 
+import { useState } from 'react';
+
 import { Alan, Kart, girdiSinifi } from './parcalar.jsx';
 import { ekranKilidiVarMi } from '../core/ekran.js';
 import { CEVIRIM_SERVISLERI } from '../core/kayitci.js';
@@ -27,6 +29,33 @@ function Anahtar({ etiket, aciklama, isaretli, degistir }) {
         <span className="block text-xs text-zinc-500 dark:text-zinc-400">{aciklama}</span>
       </span>
     </label>
+  );
+}
+
+/**
+ * Gizli alan. Yanlış yapıştırılmış bir anahtarı gözle görebilmek için
+ * göster/gizle düğmesi taşır: hatanın en sık sebebi eksik kopyalama.
+ */
+function GizliGirdi({ deger, degistir }) {
+  const [acik, acikAyarla] = useState(false);
+  return (
+    <div className="flex gap-2">
+      <input
+        type={acik ? 'text' : 'password'}
+        value={deger}
+        onChange={(olay) => degistir(olay.target.value.trim())}
+        autoComplete="off"
+        spellCheck={false}
+        className={`${girdiSinifi} font-mono`}
+      />
+      <button
+        type="button"
+        onClick={() => acikAyarla(!acik)}
+        className="shrink-0 rounded-lg border border-zinc-300 px-3 text-xs font-medium text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+      >
+        {acik ? 'Gizle' : 'Göster'}
+      </button>
+    </div>
   );
 }
 
@@ -128,13 +157,9 @@ export default function AyarEkrani({ ayarlar, guncelle }) {
         </Alan>
 
         <Alan etiket="API anahtarı" aciklama="Boş bırakırsanız ses dosyası yükleme kapalı kalır.">
-          <input
-            type="password"
-            value={ayarlar.cevirimAnahtari}
-            onChange={(olay) => ayarla('cevirimAnahtari')(olay.target.value)}
-            placeholder={seciliServis === CEVIRIM_SERVISLERI.groq ? 'gsk_…' : 'sk-…'}
-            autoComplete="off"
-            className={girdiSinifi}
+          <GizliGirdi
+            deger={ayarlar.cevirimAnahtari}
+            degistir={ayarla('cevirimAnahtari')}
           />
         </Alan>
 
@@ -185,15 +210,17 @@ export default function AyarEkrani({ ayarlar, guncelle }) {
 
         <Alan
           etiket="API anahtarı"
-          aciklama="Workers AI Read + Edit yetkili bir token. Boşsa akıllı not kapalı kalır."
+          aciklama="Workers AI Read + Edit yetkili bir token (Global API Key değil). Boşsa akıllı not kapalı kalır."
         >
-          <input
-            type="password"
-            value={ayarlar.zekaAnahtari}
-            onChange={(olay) => ayarla('zekaAnahtari')(olay.target.value.trim())}
-            autoComplete="off"
-            className={girdiSinifi}
+          <GizliGirdi
+            deger={ayarlar.zekaAnahtari}
+            degistir={ayarla('zekaAnahtari')}
           />
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            {ayarlar.zekaAnahtari
+              ? `${ayarlar.zekaAnahtari.length} karakter girildi (token genelde 40).`
+              : 'Henüz girilmedi.'}
+          </p>
         </Alan>
 
         <Alan etiket="Model">
