@@ -53,6 +53,38 @@ export function kesiniKat(hamMetin, metin, degistir) {
   return kirilma === -1 ? metin : `${hamMetin.slice(0, kirilma + 1)}${metin}`;
 }
 
+/**
+ * Tarayıcının mikrofon izin durumunu okur. Permissions API'nin 'microphone'
+ * adını her tarayıcı desteklemiyor; desteklemeyende 'bilinmiyor' döner.
+ * @returns {Promise<'granted'|'denied'|'prompt'|'bilinmiyor'>}
+ */
+export async function mikrofonIzni() {
+  try {
+    const durum = await navigator.permissions.query({ name: 'microphone' });
+    return durum.state;
+  } catch {
+    return 'bilinmiyor';
+  }
+}
+
+/**
+ * İzin durumu değiştiğinde haber verir. Kullanıcı izni tarayıcı ayarlarından
+ * sonradan açtığında ekranda kalmış eski uyarıyı temizlemek için gerekli.
+ * @returns {() => void} izlemeyi bırakan işlev
+ */
+export function mikrofonIzniniIzle(geriCagri) {
+  let birak = () => {};
+  navigator.permissions
+    ?.query({ name: 'microphone' })
+    .then((durum) => {
+      const isle = () => geriCagri(durum.state);
+      durum.addEventListener('change', isle);
+      birak = () => durum.removeEventListener('change', isle);
+    })
+    .catch(() => {});
+  return () => birak();
+}
+
 /** Kullanıcıya gösterilecek hata karşılıkları. */
 const HATA_METINLERI = {
   'not-allowed': 'Mikrofon izni verilmedi. Tarayıcı ayarlarından izin verin.',
@@ -120,7 +152,9 @@ export class Dinleyici {
         this.istendi = false;
         this.onDurum('durdu');
       }
-      if (mesaj) this.onHata(mesaj);
+      // Hata kodu da geçilir: çağıran taraf "izin verilmedi" durumunu gerçek
+      // izin durumuyla karşılaştırıp daha doğru bir mesaj gösterebilsin.
+      if (mesaj) this.onHata(mesaj, olay.error);
     };
 
     tanima.onend = () => {

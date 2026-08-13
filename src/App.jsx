@@ -2,7 +2,13 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } f
 
 import { notCikar } from './turkce/index.js';
 import { duzenlemeyeAl, yeniMaddeleriKat } from './turkce/duzenle.js';
-import { Dinleyici, konusmaTanimaVarMi, kesiniKat } from './core/dinleme.js';
+import {
+  Dinleyici,
+  konusmaTanimaVarMi,
+  kesiniKat,
+  mikrofonIzni,
+  mikrofonIzniniIzle,
+} from './core/dinleme.js';
 import { sesiYaziyaCevir, CEVIRIM_SERVISLERI } from './core/kayitci.js';
 import { akilliNotCikar } from './core/zeka.js';
 import { ekraniAcikTut, ekranKilidiniBirak, ekranKilidiniIzle } from './core/ekran.js';
@@ -176,6 +182,16 @@ export default function App() {
   }, [dinliyor, ayarlar.ekraniAcikTut]);
 
   // --- Dinleme -------------------------------------------------------------
+  // Kullanıcı izni tarayıcı ayarlarından sonradan açtığında ekranda kalmış
+  // "izin verilmedi" uyarısı kendiliğinden kalksın.
+  useEffect(
+    () =>
+      mikrofonIzniniIzle((izin) => {
+        if (izin === 'granted') hataAyarla('');
+      }),
+    [],
+  );
+
   const dinlemeyiDurdur = useCallback(() => {
     dinleyiciRef.current?.durdur();
     dinleyiciRef.current = null;
@@ -203,7 +219,22 @@ export default function App() {
           araMetinAyarla('');
         }
       },
-      onHata: hataAyarla,
+      onHata: (mesaj, kod) => {
+        // Tarayıcı izni verili olduğu hâlde de 'not-allowed' dönebiliyor:
+        // izin sayfa açıkken değiştirildiyse sekmeye yansımaz. Kullanıcıyı
+        // olmayan bir izin ayarına yollamak yerine gerçek çözümü söyleyelim.
+        if (kod === 'not-allowed') {
+          mikrofonIzni().then((izin) =>
+            hataAyarla(
+              izin === 'granted'
+                ? 'Mikrofon izni verili görünüyor ama tarayıcı erişime izin vermedi. Sayfayı yenileyip tekrar deneyin.'
+                : mesaj,
+            ),
+          );
+          return;
+        }
+        hataAyarla(mesaj);
+      },
     });
 
     if (!dinleyici.baslat()) return;
