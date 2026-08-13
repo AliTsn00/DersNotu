@@ -152,6 +152,8 @@ export class Dinleyici {
     this.tanima = null;
     // Son kesin metin; tekrar eden bildirimleri ayıklamak için tutulur.
     this.sonKesin = '';
+    // Henüz kesinleşmemiş son söz; motor kapanırken kurtarılır.
+    this.sonAra = '';
   }
 
   #kur() {
@@ -185,12 +187,14 @@ export class Dinleyici {
           const karar = kesinKarari(metin, this.sonKesin);
           if (karar === 'yoksay') continue;
           this.sonKesin = metin;
+          this.sonAra = '';
           // `degistir` doğruysa bu, önceki satırın uzamış hâlidir; yeni satır
           // açılmaz, sonuncusunun üzerine yazılır.
           this.onKesin(metin, karar === 'degistir');
         } else ara += `${metin} `;
       }
-      this.onAra(ara.trim());
+      this.sonAra = ara.trim();
+      this.onAra(this.sonAra);
     };
 
     tanima.onerror = (olay) => {
@@ -206,13 +210,30 @@ export class Dinleyici {
 
     tanima.onend = () => {
       this.calisiyor = false;
+      // Motor 60 saniyede bir kendini kapatıyor ve o an kesinleşmemiş bir söz
+      // kalmışsa onu hiç bildirmiyor — her dakika bir cümlenin yarısını
+      // kaybetmek demek. Kesin sayıp katıyoruz; motor sonra aynı sözü tekrar
+      // bildirirse ayıklayıcı zaten yakalıyor.
+      if (this.sonAra) {
+        const karar = kesinKarari(this.sonAra, this.sonKesin);
+        if (karar !== 'yoksay') {
+          const kurtarilan = this.sonAra;
+          this.sonKesin = kurtarilan;
+          this.onKesin(kurtarilan, karar === 'degistir');
+        }
+        this.sonAra = '';
+        this.onAra('');
+      }
       if (!this.istendi) {
         this.onDurum('durdu');
         return;
       }
-      // Motor kendiliğinden kapandı: artan gecikmeyle yeniden başlat.
+      // Motor kendiliğinden kapandı: artan gecikmeyle yeniden başlat. İlk
+      // deneme beklemez — olağan 60 saniyelik kapanma bu, ve her beklenen
+      // milisaniye konuşmadan kayıptır. Gecikme yalnızca üst üste başarısız
+      // olan denemelerde büyür.
       this.yenidenDeneme += 1;
-      const gecikme = Math.min(200 * this.yenidenDeneme, 3000);
+      const gecikme = this.yenidenDeneme === 1 ? 0 : Math.min(200 * this.yenidenDeneme, 3000);
       this.onDurum('yeniden-baglanıyor');
       this.zamanlayici = setTimeout(() => this.#basla(), gecikme);
     };
@@ -239,6 +260,7 @@ export class Dinleyici {
     this.yenidenDeneme = 0;
     // Yeni oturum: önceki dersin son cümlesi tekrar sanılmasın.
     this.sonKesin = '';
+    this.sonAra = '';
     this.#basla();
     return true;
   }

@@ -35,6 +35,31 @@ konuşma  →  ham metin  →  temizle  →  cümlelere ayır  →  noktalama on
 - **Cihazda saklar.** Dersler IndexedDB'de tutulur; not çıkarma tamamen çevrimdışı ve
   kural tabanlıdır, metin hiçbir sunucuya gönderilmez.
 
+## Ses tanımayı iyileştirenler
+
+Konuşma tanımanın çıktısı ham hâliyle yetmiyor; dört ayrı noktadan destekleniyor:
+
+- **Ders sözlüğü.** Hocanızın terimlerini ve tanımanın yanlış duyduğu sözleri
+  *Ayarlar → Ders sözlüğü*'ne yazarsınız. Yalnızca terim yazarsanız ipucu olur,
+  `yanlış = doğru` yazarsanız düzeltme kuralı. Aynı sözlük iki yerde çalışır:
+  kayda başlamadan tanıma motoruna verilir (kelimeyi baştan doğru duymak,
+  sonradan düzeltmekten iyidir) ve metne geçtikten sonra uygulanır.
+- **Aday seçimi.** Tanıma motoru her söz için birkaç okuma üretir ve güven
+  sırasına dizer. En güvendiği okuma alışılmadık özel adlarda yanılıyor
+  ("Serahsî" yerine sıradan kelimeler). Sözlükte terim varsa dört okuma istenir
+  ve terimi içeren aday öne alınır.
+- **Kesilmeyi kurtarma.** Motor 60 saniyede bir kendini kapatır ve o an
+  kesinleşmemiş sözü hiç bildirmez — her dakika bir cümlenin yarısı. Kapanma
+  anındaki söz kesin sayılıp nota katılır.
+- **Mikrofon testi.** Tanıma kalitesini en çok belirleyen şey yazılım değil,
+  mikrofonun hocaya uzaklığı. Kayıt düğmesinin altındaki altı saniyelik ölçüm
+  "yaklaştırın" ya da "kırpılıyor" der.
+
+Yerleşik imlâ düzeltmeleri (`kuranı kerim` → `Kur'ân-ı Kerîm`, `buhari` →
+`Buhârî`) yalnızca aynı sözün yanlış yazımlarını kapsar; anlamı değiştiren ya da
+bağlam gerektiren tek kural yoktur. **Arap harfi taşıyan hiçbir dizi
+değiştirilmez.**
+
 ## İslami dersler
 
 Ders anlatımındaki dinî içerik ayrı türlerde işlenir:
