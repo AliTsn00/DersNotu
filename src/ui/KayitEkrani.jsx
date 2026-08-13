@@ -35,15 +35,17 @@ const SEVIYE_RENKLERI = {
  * dersten sonra notu okuyarak anlamak çok geç oluyor. Altı saniyelik ölçüm,
  * telefonun yerini değiştirmek için yeterli bilgi veriyor.
  */
-function MikrofonTesti() {
+function MikrofonTesti({ olcumDegisti }) {
   const [olculuyor, olculuyorAyarla] = useState(false);
   const [seviye, seviyeAyarla] = useState(0);
   const [tepe, tepeAyarla] = useState(0);
   const [bitti, bittiAyarla] = useState(false);
   const durdurRef = useRef(null);
 
-  // Ekrandan çıkılırsa mikrofon açık kalmasın.
+  // Ekrandan çıkılırsa mikrofon açık kalmasın: açık kalan bir akış, kayda
+  // başlarken "mikrofon başka uygulamada" hatasına yol açar.
   useEffect(() => () => durdurRef.current?.(), []);
+  useEffect(() => olcumDegisti?.(olculuyor), [olculuyor, olcumDegisti]);
 
   const basla = async () => {
     if (olculuyor) return;
@@ -159,6 +161,9 @@ export default function KayitEkrani({
   ornekYukle,
   temizle,
 }) {
+  // Deneme sürerken mikrofon bu sekmede açık; aynı anda kayda başlamak
+  // "mikrofon başka uygulamada" hatası verir.
+  const [denemeSuruyor, denemeSuruyorAyarla] = useState(false);
   const cumleSayisi = hamMetin.split('\n').filter(Boolean).length;
   const kelimeSayisi = hamMetin.split(/\s+/).filter(Boolean).length;
   const kurtarilanZaman = kurtarilan
@@ -245,7 +250,7 @@ export default function KayitEkrani({
           <KayitDugmesi
             dinliyor={dinliyor}
             onTikla={baslatDurdur}
-            kapali={!canliDestekli}
+            kapali={!canliDestekli || denemeSuruyor}
           />
 
           <div className="text-center">
@@ -266,7 +271,9 @@ export default function KayitEkrani({
             {araMetin || (dinliyor ? 'Hoca konuşmayı bekliyor…' : '')}
           </p>
 
-          {!dinliyor && canliDestekli ? <MikrofonTesti /> : null}
+          {!dinliyor && canliDestekli ? (
+            <MikrofonTesti olcumDegisti={denemeSuruyorAyarla} />
+          ) : null}
         </Kart>
       ) : null}
 

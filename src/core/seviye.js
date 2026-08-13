@@ -12,6 +12,46 @@
 
 const OLCUM_ARALIGI_MS = 100;
 
+/**
+ * getUserMedia'nın ayırt ettiği sebepler. Tanıma motoru bunların hepsini tek
+ * bir "not-allowed" altında topluyor; kullanıcıyı olmayan bir izin ayarına
+ * yollamak yerine gerçek sebebi söyleyebilmek için ön kontrol yapılıyor.
+ */
+const MIKROFON_HATALARI = {
+  NotAllowedError:
+    'Mikrofon izni reddedildi. Adres çubuğundaki kilit simgesine basıp Mikrofon → İzin ver deyin, sonra sayfayı yenileyin.',
+  SecurityError:
+    'Tarayıcı mikrofon erişimini engelledi. Sayfanın https ile açık olduğundan ve çerçeve içinde olmadığından emin olun.',
+  NotFoundError: 'Mikrofon bulunamadı. Cihazın bağlı ve açık olduğundan emin olun.',
+  NotReadableError:
+    'Mikrofon şu anda başka bir uygulamada açık. Görüşme uygulamalarını ve mikrofon kullanan diğer sekmeleri kapatıp tekrar deneyin.',
+  AbortError: 'Mikrofon açılamadı. Cihazı çıkarıp yeniden takmayı deneyin.',
+  OverconstrainedError: 'Seçili mikrofon istenen ayarları desteklemiyor.',
+};
+
+/**
+ * Kayıt başlamadan önce mikrofona gerçekten erişilebildiğini sınar.
+ *
+ * Açılan akış hemen kapatılır: amaç ses almak değil, izni ve cihazı denemek.
+ *
+ * @returns {Promise<{tamam: boolean, mesaj?: string}>}
+ */
+export async function mikrofonuDene() {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    return { tamam: false, mesaj: 'Bu tarayıcı mikrofona erişemiyor.' };
+  }
+  try {
+    const akis = await navigator.mediaDevices.getUserMedia({ audio: true });
+    akis.getTracks().forEach((parca) => parca.stop());
+    return { tamam: true };
+  } catch (sorun) {
+    return {
+      tamam: false,
+      mesaj: MIKROFON_HATALARI[sorun?.name] || `Mikrofon açılamadı (${sorun?.name || 'bilinmeyen'}).`,
+    };
+  }
+}
+
 /** Ölçülen düzeye göre kullanıcıya söylenecek söz. */
 export function seviyeYorumu(tepe) {
   if (tepe < 0.015) {

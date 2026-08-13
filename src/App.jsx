@@ -15,6 +15,7 @@ import { isitmeyiDuzelt } from './turkce/isitme.js';
 import { alintilariDogrula } from './kuran/dogrula.js';
 import { ayetleriDuzelt, ayetiElleUygula } from './kuran/duzelt.js';
 import { ekraniAcikTut, ekranKilidiniBirak, ekranKilidiniIzle } from './core/ekran.js';
+import { mikrofonuDene } from './core/seviye.js';
 import {
   VARSAYILAN_AYARLAR,
   ayarlariOku,
@@ -253,8 +254,17 @@ export default function App() {
 
   useEffect(() => dinlemeyiDurdur, [dinlemeyiDurdur]);
 
-  const dinlemeyiBaslat = useCallback(() => {
+  const dinlemeyiBaslat = useCallback(async () => {
     hataAyarla('');
+    // Tanıma motorunu başlatmadan önce mikrofonu dene: motorun tek hata kodu
+    // ("not-allowed") izin yokluğunu, cihaz yokluğunu ve mikrofonun başka bir
+    // uygulamada açık olmasını birbirinden ayırmıyor.
+    const deneme = await mikrofonuDene();
+    if (!deneme.tamam) {
+      hataAyarla(deneme.mesaj);
+      return;
+    }
+
     const dinleyici = new Dinleyici({
       dil: ayarlar.dil,
       sozluk: ayarlar.dersSozlugu,
