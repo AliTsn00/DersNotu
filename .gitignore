@@ -10,3 +10,9 @@ dev-dist
 npm-debug.log*
 yarn-error.log*
 dist-tek
+
+# /ders-notu skill'inin ara çıktıları — ders içeriği depoya girmesin
+ham.txt
+*.hazirlik.json
+not.json
+*.docx
