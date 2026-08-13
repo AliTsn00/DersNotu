@@ -239,6 +239,7 @@ export default function App() {
     hataAyarla('');
     const dinleyici = new Dinleyici({
       dil: ayarlar.dil,
+      sozluk: ayarlar.dersSozlugu,
       onAra: araMetinAyarla,
       onKesin: (metin, degistir) => {
         // Düzeltme metin ham hâline girerken yapılır: hem kural motoru hem
@@ -284,7 +285,7 @@ export default function App() {
     dinleyiciRef.current = dinleyici;
     if (!baslangicRef.current || !hamMetin) baslangicRef.current = Date.now() - sure * 1000;
     dinliyorAyarla(true);
-  }, [ayarlar.dil, hamMetin, sure]);
+  }, [ayarlar.dil, ayarlar.dersSozlugu, hamMetin, sure]);
 
   const baslatDurdur = useCallback(() => {
     if (dinliyor) {

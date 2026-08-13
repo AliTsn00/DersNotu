@@ -4,6 +4,7 @@
 // sessizliklerde kendini kapattığı için ders boyunca otomatik yeniden başlatılır.
 
 import { trKucuk } from '../turkce/harf.js';
+import { sozlukAyristir } from '../turkce/isitme.js';
 
 const TanimaSinifi =
   typeof window !== 'undefined'
@@ -85,6 +86,42 @@ export function mikrofonIzniniIzle(geriCagri) {
   return () => birak();
 }
 
+/**
+ * Motorun ürettiği adaylar arasından ders sözlüğüne en çok uyanı seçer.
+ *
+ * Tanıma motoru her söz için birden çok okuma üretebiliyor ve bunları güven
+ * sırasına diziyor. En güvendiği okuma çoğu zaman doğrudur — ama alışılmadık
+ * özel adlarda değil: "Serahsî" yerine sıradan kelimeler tercih ediliyor.
+ * Kullanıcı o terimin derste geçeceğini sözlüğe yazmışsa, onu içeren alt aday
+ * daha isabetlidir.
+ *
+ * Eşitlikte ilk aday korunur: sözlük bir şey söylemiyorsa motorun sıralamasına
+ * müdahale etmek için sebep yok.
+ */
+export function adaySec(adaylar, terimler = []) {
+  const gecerli = adaylar.filter(Boolean);
+  if (gecerli.length < 2 || !terimler.length) return gecerli[0] || '';
+
+  const puanla = (aday) => {
+    const kucuk = trKucuk(aday);
+    return terimler.reduce(
+      (puan, terim) => (terim && kucuk.includes(trKucuk(terim)) ? puan + 1 : puan),
+      0,
+    );
+  };
+
+  let enIyi = gecerli[0];
+  let enIyiPuan = puanla(gecerli[0]);
+  for (const aday of gecerli.slice(1)) {
+    const puan = puanla(aday);
+    if (puan > enIyiPuan) {
+      enIyiPuan = puan;
+      enIyi = aday;
+    }
+  }
+  return enIyi;
+}
+
 /** Kullanıcıya gösterilecek hata karşılıkları. */
 const HATA_METINLERI = {
   'not-allowed': 'Mikrofon izni verilmedi. Tarayıcı ayarlarından izin verin.',
@@ -100,8 +137,10 @@ export class Dinleyici {
    * @param {{dil?: string, onAra?: Function, onKesin?: Function, onDurum?: Function, onHata?: Function}} secenekler
    */
   constructor(secenekler = {}) {
-    const { dil = 'tr-TR', onAra, onKesin, onDurum, onHata } = secenekler;
+    const { dil = 'tr-TR', sozluk = '', onAra, onKesin, onDurum, onHata } = secenekler;
     this.dil = dil;
+    // Sözlükteki terimler aday seçiminde kullanılır; bir kez ayrıştırılır.
+    this.terimler = sozlukAyristir(sozluk).terimler;
     this.onAra = onAra || (() => {});
     this.onKesin = onKesin || (() => {});
     this.onDurum = onDurum || (() => {});
@@ -120,7 +159,8 @@ export class Dinleyici {
     tanima.lang = this.dil;
     tanima.continuous = true;
     tanima.interimResults = true;
-    tanima.maxAlternatives = 1;
+    // Birden çok okuma iste: sözlükteki terimler alt adaylarda çıkabiliyor.
+    tanima.maxAlternatives = this.terimler.length ? 4 : 1;
 
     tanima.onstart = () => {
       this.calisiyor = true;
@@ -132,7 +172,14 @@ export class Dinleyici {
       let ara = '';
       for (let i = olay.resultIndex; i < olay.results.length; i += 1) {
         const sonuc = olay.results[i];
-        const metin = sonuc[0]?.transcript?.trim();
+        // Ara sonuçlar sürekli değişiyor; aday seçimini yalnızca kesinleşmiş
+        // sözde yapmak hem daha ucuz hem daha kararlı.
+        const metin = sonuc.isFinal
+          ? adaySec(
+              Array.from({ length: sonuc.length }, (_, sira) => sonuc[sira]?.transcript?.trim()),
+              this.terimler,
+            )
+          : sonuc[0]?.transcript?.trim();
         if (!metin) continue;
         if (sonuc.isFinal) {
           const karar = kesinKarari(metin, this.sonKesin);

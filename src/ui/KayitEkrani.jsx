@@ -1,7 +1,10 @@
 // Ders yakalama ekranı: canlı dinleme, ses dosyası veya metin yapıştırma.
 
+import { useEffect, useRef, useState } from 'react';
+
 import { sureYaz } from '../turkce/bicim.js';
 import { ORNEK_DERSLER } from '../ornek.js';
+import { seviyeOlcerBaslat, seviyeYorumu } from '../core/seviye.js';
 import { Dugme, Kart, BosDurum, girdiSinifi } from './parcalar.jsx';
 
 const MODLAR = [
@@ -15,6 +18,92 @@ const DURUM_METINLERI = {
   dinliyor: 'Dinleniyor',
   'yeniden-baglanıyor': 'Yeniden bağlanıyor',
 };
+
+const TEST_SURESI_MS = 6000;
+
+const SEVIYE_RENKLERI = {
+  yok: 'bg-rose-500',
+  zayif: 'bg-amber-500',
+  iyi: 'bg-emerald-500',
+  yuksek: 'bg-amber-500',
+};
+
+/**
+ * Kayıt öncesi mikrofon denemesi.
+ *
+ * Tanıma kalitesini en çok belirleyen şey mikrofonun hocaya uzaklığı; bunu
+ * dersten sonra notu okuyarak anlamak çok geç oluyor. Altı saniyelik ölçüm,
+ * telefonun yerini değiştirmek için yeterli bilgi veriyor.
+ */
+function MikrofonTesti() {
+  const [olculuyor, olculuyorAyarla] = useState(false);
+  const [seviye, seviyeAyarla] = useState(0);
+  const [tepe, tepeAyarla] = useState(0);
+  const [bitti, bittiAyarla] = useState(false);
+  const durdurRef = useRef(null);
+
+  // Ekrandan çıkılırsa mikrofon açık kalmasın.
+  useEffect(() => () => durdurRef.current?.(), []);
+
+  const basla = async () => {
+    if (olculuyor) return;
+    olculuyorAyarla(true);
+    bittiAyarla(false);
+    tepeAyarla(0);
+    seviyeAyarla(0);
+
+    let enYuksek = 0;
+    const durdur = await seviyeOlcerBaslat((deger) => {
+      seviyeAyarla(deger);
+      if (deger > enYuksek) enYuksek = deger;
+    });
+    durdurRef.current = durdur;
+
+    setTimeout(() => {
+      durdur();
+      durdurRef.current = null;
+      olculuyorAyarla(false);
+      seviyeAyarla(0);
+      tepeAyarla(enYuksek);
+      bittiAyarla(true);
+    }, TEST_SURESI_MS);
+  };
+
+  const yorum = bitti ? seviyeYorumu(tepe) : null;
+
+  return (
+    <div className="w-full max-w-md space-y-2 px-4 text-center">
+      {olculuyor ? (
+        <>
+          <div className="h-2 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
+            <div
+              className="h-full rounded-full bg-indigo-500 transition-[width] duration-100"
+              style={{ width: `${Math.round(seviye * 100)}%` }}
+            />
+          </div>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            Hoca gibi konuşun ya da bekleyin — ölçülüyor…
+          </p>
+        </>
+      ) : (
+        <button
+          type="button"
+          onClick={basla}
+          className="text-xs text-zinc-500 underline decoration-dotted underline-offset-2 dark:text-zinc-400"
+        >
+          Mikrofonu test et
+        </button>
+      )}
+
+      {yorum && !olculuyor ? (
+        <p className="flex items-center justify-center gap-2 text-xs text-zinc-600 dark:text-zinc-300">
+          <span className={`inline-block size-2 rounded-full ${SEVIYE_RENKLERI[yorum.durum]}`} />
+          {yorum.mesaj}
+        </p>
+      ) : null}
+    </div>
+  );
+}
 
 function KayitDugmesi({ dinliyor, onTikla, kapali }) {
   return (
@@ -176,6 +265,8 @@ export default function KayitEkrani({
           <p className="min-h-12 max-w-xl px-4 text-center text-sm italic text-zinc-400">
             {araMetin || (dinliyor ? 'Hoca konuşmayı bekliyor…' : '')}
           </p>
+
+          {!dinliyor && canliDestekli ? <MikrofonTesti /> : null}
         </Kart>
       ) : null}
 

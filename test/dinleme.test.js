@@ -5,7 +5,33 @@
 // bildirim dizisinin tek satıra indiğini doğrular.
 
 import { describe, it, expect } from 'vitest';
-import { kesinKarari, kesiniKat } from '../src/core/dinleme.js';
+import { adaySec, kesinKarari, kesiniKat } from '../src/core/dinleme.js';
+
+describe('adaySec', () => {
+  it('sözlük boşsa motorun ilk adayını korur', () => {
+    expect(adaySec(['sera hisse', 'Serahsî'], [])).toBe('sera hisse');
+  });
+
+  it('sözlükteki terimi içeren adayı öne alır', () => {
+    expect(adaySec(['sera hisse dedi', 'Serahsî dedi'], ['Serahsî'])).toBe('Serahsî dedi');
+  });
+
+  it('hiçbir aday terim içermiyorsa ilkini korur', () => {
+    expect(adaySec(['birinci', 'ikinci'], ['Serahsî'])).toBe('birinci');
+  });
+
+  it('Türkçe büyük/küçük harfe takılmaz', () => {
+    expect(adaySec(['bir şey', 'İMAM gazâlî'], ['imam Gazâlî'])).toBe('İMAM gazâlî');
+  });
+
+  it('boş adayları eler', () => {
+    expect(adaySec([undefined, '', 'tek'], ['x'])).toBe('tek');
+  });
+
+  it('aday yoksa boş dizgi döner', () => {
+    expect(adaySec([], ['x'])).toBe('');
+  });
+});
 
 describe('kesinKarari', () => {
   it('ilk metni ekler', () => {
