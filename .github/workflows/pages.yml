@@ -40,8 +40,10 @@ jobs:
 
       - uses: actions/configure-pages@v5
         with:
-          # Depoda Pages kapalıysa iş akışı kendisi açar; Settings'e girmeye
-          # gerek kalmaz (yalnızca public depolarda ya da ücretli planda).
+          # Pages zaten açıksa doğrular. Kapalıyken açmayı dener ama iş akışı
+          # jetonunun buna yetkisi yoktur ("Resource not accessible by
+          # integration"); ilk kurulumda Settings → Pages → Source: GitHub
+          # Actions bir kez elle seçilmelidir.
           enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
