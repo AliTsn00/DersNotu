@@ -2,7 +2,7 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } f
 
 import { notCikar } from './turkce/index.js';
 import { duzenlemeyeAl, yeniMaddeleriKat } from './turkce/duzenle.js';
-import { Dinleyici, konusmaTanimaVarMi } from './core/dinleme.js';
+import { Dinleyici, konusmaTanimaVarMi, kesiniKat } from './core/dinleme.js';
 import { sesiYaziyaCevir, CEVIRIM_SERVISLERI } from './core/kayitci.js';
 import { ekraniAcikTut, ekranKilidiniBirak, ekranKilidiniIzle } from './core/ekran.js';
 import {
@@ -174,8 +174,8 @@ export default function App() {
     const dinleyici = new Dinleyici({
       dil: ayarlar.dil,
       onAra: araMetinAyarla,
-      onKesin: (metin) => {
-        hamMetinAyarla((onceki) => (onceki ? `${onceki}\n${metin}` : metin));
+      onKesin: (metin, degistir) => {
+        hamMetinAyarla((onceki) => kesiniKat(onceki, metin, degistir));
         araMetinAyarla('');
       },
       onDurum: (yeniDurum) => {

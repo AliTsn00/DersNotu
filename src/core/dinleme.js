@@ -10,6 +10,42 @@ const TanimaSinifi =
 
 export const konusmaTanimaVarMi = () => Boolean(TanimaSinifi);
 
+/**
+ * Android Chrome aynı konuşmayı birden çok kez "kesin" diye bildirir ve her
+ * bildirimde biraz daha uzatır:
+ *
+ *   "Selamünaleyküm" → "Selamünaleyküm değerli" → "Selamünaleyküm değerli kardeşlerim"
+ *
+ * Üçü de ayrı satır yazılırsa not tekrarla dolar. Bu yüzden her kesin sonuç bir
+ * öncekiyle karşılaştırılıp ne yapılacağına burada karar verilir.
+ *
+ * @returns {'ekle'|'degistir'|'yoksay'}
+ */
+export function kesinKarari(yeni, onceki) {
+  const y = String(yeni || '').trim();
+  const o = String(onceki || '').trim();
+  if (!y) return 'yoksay';
+  if (!o) return 'ekle';
+  if (y === o) return 'yoksay';
+  // Yeni metin öncekiyle başlıyorsa aynı cümlenin uzamış hâlidir.
+  if (y.startsWith(o)) return 'degistir';
+  // Tersi de olur: motor bazen kısalmış bir sürüm geri gönderir.
+  if (o.startsWith(y)) return 'yoksay';
+  return 'ekle';
+}
+
+/**
+ * Kesin sonucu ham metne katar. `degistir` doğruysa son satırın üzerine yazar;
+ * bölütleyici satır sonlarını sert cümle sınırı saydığı için yeni satır açmak,
+ * uzayan cümleyi ikiye bölmek demektir.
+ */
+export function kesiniKat(hamMetin, metin, degistir) {
+  if (!hamMetin) return metin;
+  if (!degistir) return `${hamMetin}\n${metin}`;
+  const kirilma = hamMetin.lastIndexOf('\n');
+  return kirilma === -1 ? metin : `${hamMetin.slice(0, kirilma + 1)}${metin}`;
+}
+
 /** Kullanıcıya gösterilecek hata karşılıkları. */
 const HATA_METINLERI = {
   'not-allowed': 'Mikrofon izni verilmedi. Tarayıcı ayarlarından izin verin.',
@@ -36,6 +72,8 @@ export class Dinleyici {
     this.yenidenDeneme = 0;
     this.zamanlayici = null;
     this.tanima = null;
+    // Son kesin metin; tekrar eden bildirimleri ayıklamak için tutulur.
+    this.sonKesin = '';
   }
 
   #kur() {
@@ -57,8 +95,14 @@ export class Dinleyici {
         const sonuc = olay.results[i];
         const metin = sonuc[0]?.transcript?.trim();
         if (!metin) continue;
-        if (sonuc.isFinal) this.onKesin(metin);
-        else ara += `${metin} `;
+        if (sonuc.isFinal) {
+          const karar = kesinKarari(metin, this.sonKesin);
+          if (karar === 'yoksay') continue;
+          this.sonKesin = metin;
+          // `degistir` doğruysa bu, önceki satırın uzamış hâlidir; yeni satır
+          // açılmaz, sonuncusunun üzerine yazılır.
+          this.onKesin(metin, karar === 'degistir');
+        } else ara += `${metin} `;
       }
       this.onAra(ara.trim());
     };
@@ -105,6 +149,8 @@ export class Dinleyici {
     }
     this.istendi = true;
     this.yenidenDeneme = 0;
+    // Yeni oturum: önceki dersin son cümlesi tekrar sanılmasın.
+    this.sonKesin = '';
     this.#basla();
     return true;
   }
