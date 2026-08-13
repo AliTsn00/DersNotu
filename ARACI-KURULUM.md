@@ -58,7 +58,7 @@ World → kodu yapıştır → Deploy. Aracı adresi o zaman
 | Uygulamadaki hata | Anlamı |
 | --- | --- |
 | Aracı adrese ulaşılamadı | Adres yanlış ya da `/api/zeka` eki unutulmuş. Adresi tarayıcıda açın — "Yalnızca POST kabul edilir." yazmalı. |
-| Geçersiz yol (400) | Hesap kimliği 32 haneli değil. Ayarlardan kontrol edin. |
+| Hesap kimliği 32 haneli olmalı (400) | Ayarlardaki hesap kimliği eksik ya da hatalı. |
 | Cloudflare anahtarı kabul edilmedi (401/403) | Token yanlış ya da yetkisi eksik. Token'ın **Workers AI – Read** *ve* **Edit** yetkisi olmalı. |
 | Hesap kimliği ya da model bulunamadı (404) | Hesap kimliği yanlış. |
 | Günlük ücretsiz kota doldu (429) | Kota her gün sıfırlanır. |

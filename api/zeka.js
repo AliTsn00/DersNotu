@@ -9,8 +9,12 @@
 //    sıkışma aşamasında sıfırlanıyor (ölçüldü, 13 Ağustos 2026).
 //
 // api.cloudflare.com erişilebilir olduğu için aracı başka bir yerde çalışıp
-// isteği oraya iletebiliyor. Cloudflare'de barınan sürüm worker/ altında duruyor;
-// erişim engeli kalkarsa o da kullanılabilir.
+// isteği oraya iletebiliyor. Aynı işi yapan Cloudflare sürümü worker/ altında.
+//
+// Hedef, yol yerine sorgu parametresiyle taşınır:
+//   POST /api/zeka?hesap=<32 haneli>&model=@cf/meta/...
+// Çok segmentli yol (`[...yol].js`) denendi; Vercel bu projede yalnızca tek
+// segmenti eşleştirdi, derini 404 döndü.
 //
 // Anahtar burada saklanmaz: tarayıcıdan gelen Authorization başlığı olduğu gibi
 // aktarılır. Adresi bilen biri kendi anahtarı olmadan kotanızı harcayamaz.
@@ -24,10 +28,7 @@ function izinliMi(kaynak) {
 
 export default async function handler(istek, yanit) {
   const kaynak = istek.headers.origin || '';
-  yanit.setHeader(
-    'Access-Control-Allow-Origin',
-    izinliMi(kaynak) ? kaynak : IZINLI_KAYNAKLAR[0],
-  );
+  yanit.setHeader('Access-Control-Allow-Origin', izinliMi(kaynak) ? kaynak : IZINLI_KAYNAKLAR[0]);
   yanit.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   yanit.setHeader('Access-Control-Allow-Headers', 'authorization, content-type');
   yanit.setHeader('Access-Control-Max-Age', '86400');
@@ -42,11 +43,15 @@ export default async function handler(istek, yanit) {
     return;
   }
 
-  // Yol olduğu gibi aktarılır: /accounts/<32 haneli kimlik>/ai/run/<model>
   // Kalıp kontrolü, aracının başka Cloudflare uçlarına açılmasını engeller.
-  const yol = `/${[].concat(istek.query.yol || []).join('/')}`;
-  if (!/^\/accounts\/[0-9a-f]{32}\/ai\/run\/.+$/i.test(yol)) {
-    yanit.status(400).send('Geçersiz yol.');
+  const hesap = String(istek.query.hesap || '');
+  const model = String(istek.query.model || '');
+  if (!/^[0-9a-f]{32}$/i.test(hesap)) {
+    yanit.status(400).send('Hesap kimliği 32 haneli olmalı.');
+    return;
+  }
+  if (!/^@[\w./-]+$/.test(model)) {
+    yanit.status(400).send('Model kimliği geçersiz.');
     return;
   }
 
@@ -56,12 +61,15 @@ export default async function handler(istek, yanit) {
     return;
   }
 
-  const cevap = await fetch(`https://api.cloudflare.com/client/v4${yol}`, {
-    method: 'POST',
-    headers: { authorization: yetki, 'content-type': 'application/json' },
-    // Vercel gövdeyi JSON olarak çözmüş olur; olduğu gibi geri kurulur.
-    body: typeof istek.body === 'string' ? istek.body : JSON.stringify(istek.body ?? {}),
-  });
+  const cevap = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${hesap}/ai/run/${model}`,
+    {
+      method: 'POST',
+      headers: { authorization: yetki, 'content-type': 'application/json' },
+      // Vercel gövdeyi JSON olarak çözmüş olur; olduğu gibi geri kurulur.
+      body: typeof istek.body === 'string' ? istek.body : JSON.stringify(istek.body ?? {}),
+    },
+  );
 
   const govde = await cevap.text();
   yanit.setHeader('content-type', 'application/json');

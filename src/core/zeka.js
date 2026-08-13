@@ -124,7 +124,13 @@ async function modeliCagir(ayarlar, mesajlar, isaret) {
 
   let yanit;
   try {
-    yanit = await fetch(`${temel}/accounts/${hesapKimligi}/ai/run/${secim.kimlik}`, {
+    // Aracı, hedefi sorgu parametresiyle alır; doğrudan bağlantıda Cloudflare'in
+    // kendi yol biçimi kullanılır.
+    const hedef = araci
+      ? `${temel}?hesap=${encodeURIComponent(hesapKimligi)}&model=${encodeURIComponent(secim.kimlik)}`
+      : `${temel}/accounts/${hesapKimligi}/ai/run/${secim.kimlik}`;
+
+    yanit = await fetch(hedef, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${anahtar}`,

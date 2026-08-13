@@ -41,11 +41,16 @@ export default {
       return new Response('Yalnızca POST kabul edilir.', { status: 405, headers: cors });
     }
 
-    // Yol olduğu gibi aktarılır: /accounts/<32 haneli kimlik>/ai/run/<model>
+    // Hedef sorgu parametresiyle gelir: ?hesap=<32 haneli>&model=@cf/...
     // Kalıp kontrolü, aracının başka Cloudflare uçlarına açılmasını engeller.
-    const yol = new URL(istek.url).pathname;
-    if (!/^\/accounts\/[0-9a-f]{32}\/ai\/run\/.+$/i.test(yol)) {
-      return new Response('Geçersiz yol.', { status: 400, headers: cors });
+    const sorgu = new URL(istek.url).searchParams;
+    const hesap = sorgu.get('hesap') || '';
+    const model = sorgu.get('model') || '';
+    if (!/^[0-9a-f]{32}$/i.test(hesap)) {
+      return new Response('Hesap kimliği 32 haneli olmalı.', { status: 400, headers: cors });
+    }
+    if (!/^@[\w./-]+$/.test(model)) {
+      return new Response('Model kimliği geçersiz.', { status: 400, headers: cors });
     }
 
     const yetki = istek.headers.get('authorization');
@@ -53,7 +58,7 @@ export default {
       return new Response('Authorization başlığı yok.', { status: 401, headers: cors });
     }
 
-    const yanit = await fetch(`https://api.cloudflare.com/client/v4${yol}`, {
+    const yanit = await fetch(`https://api.cloudflare.com/client/v4/accounts/${hesap}/ai/run/${model}`, {
       method: 'POST',
       headers: { authorization: yetki, 'content-type': 'application/json' },
       body: await istek.text(),
