@@ -151,7 +151,7 @@ async function modeliCagir(ayarlar, mesajlar, isaret) {
     throw new Error(
       araci
         ? 'Aracı adrese ulaşılamadı. Adresi ve internet bağlantınızı kontrol edin.'
-        : 'Tarayıcı Cloudflare\'e doğrudan bağlanamıyor. Ayarlardan aracı adresini girin (worker/KURULUM.md).',
+        : 'Tarayıcı Cloudflare\'e doğrudan bağlanamıyor. Ayarlardan aracı adresini girin (ARACI-KURULUM.md).',
     );
   } finally {
     clearTimeout(sayac);
@@ -160,11 +160,22 @@ async function modeliCagir(ayarlar, mesajlar, isaret) {
 
   if (!yanit.ok) {
     const govde = await yanit.text().catch(() => '');
+    // Cloudflare reddin sebebini gövdede açıklıyor; teşhis için kullanıcıya
+    // gösterilir. "Anahtar kabul edilmedi" tek başına hangi yetkinin eksik
+    // olduğunu söylemiyor.
+    let ayrinti = '';
+    try {
+      const hata = JSON.parse(govde)?.errors?.[0];
+      if (hata) ayrinti = ` — ${hata.code}: ${hata.message}`;
+    } catch {
+      // Gövde JSON değilse aracıdan gelen düz metindir.
+      if (govde) ayrinti = ` — ${govde.slice(0, 120)}`;
+    }
     if (yanit.status === 401 || yanit.status === 403) {
-      throw new Error('Cloudflare anahtarı kabul edilmedi. Ayarlardan kontrol edin.');
+      throw new Error(`Cloudflare anahtarı kabul edilmedi${ayrinti}`);
     }
     if (yanit.status === 404) {
-      throw new Error('Hesap kimliği ya da model bulunamadı. Ayarlardaki hesap kimliğini kontrol edin.');
+      throw new Error(`Hesap kimliği ya da model bulunamadı${ayrinti}`);
     }
     if (yanit.status === 429) {
       throw new Error('Günlük ücretsiz kota doldu. Yarın tekrar deneyin (kota her gün sıfırlanır).');
