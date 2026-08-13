@@ -1,5 +1,7 @@
 // Not nesnesini ekranda gösterir (salt okunur görünüm).
 
+import { createContext, useContext } from 'react';
+
 import { tarihYaz, sureYaz, TUR_ETIKETLERI } from '../turkce/bicim.js';
 import {
   arapcaMi,
@@ -38,10 +40,49 @@ const ALINTI_YAZI = {
   arapca: 'text-zinc-600 dark:text-zinc-300',
 };
 
+/**
+ * Âyet doğrulama sonuçları: madde kimliği → sonuç. Alıntı kutusuna kadar
+ * uzanan prop zincirinden kaçınmak için bağlamla taşınır.
+ */
+export const AyetSonuclariBaglami = createContext(new Map());
+
+/** Hadîs metnini güvenilir bir külliyatta aratan bağlantı. */
+function hadisAramaBagi(metin) {
+  const arama = String(metin || '').trim().slice(0, 120);
+  return `https://sunnah.com/search?q=${encodeURIComponent(arama)}`;
+}
+
+/**
+ * Kur'ân karşılaştırmasının sonucu.
+ *
+ * "Bulunamadı" yalnızca âyet iddiası taşıyan maddede kırmızıdır: bir hadîsin
+ * Kur'ân'da bulunmaması beklenen şeydir, hata değil.
+ */
+function DogrulamaRozeti({ sonuc, tur }) {
+  if (!sonuc) return null;
+  if (sonuc.durum === 'kesin') return <Etiket renk="emerald">✓ Kur'ân — {sonuc.kunye}</Etiket>;
+  if (sonuc.durum === 'olasi') {
+    return (
+      <Etiket renk="amber">
+        ≈ {sonuc.kunye} (%{Math.round(sonuc.benzerlik * 100)} benzer)
+      </Etiket>
+    );
+  }
+  if (sonuc.durum === 'okunamadi') {
+    return <Etiket renk="zinc">Latin harfli — karşılaştırılamadı</Etiket>;
+  }
+  if (tur === 'ayet') return <Etiket renk="rose">Kur'ân'da bulunamadı</Etiket>;
+  return null;
+}
+
 /** Âyet / hadîs / duâ / Arapça ibare kutusu. */
 export function AlintiKutusu({ madde, numara }) {
   const etiket = TUR_ETIKETLERI[madde.tur];
   const arapca = arapcaMi(madde.metin);
+  const sonuc = useContext(AyetSonuclariBaglami).get(madde.id);
+  // Kur'ân'da birebir bulunduysa künye artık tahmin değil; "doğrulanmadı"
+  // uyarısını sürdürmek yanlış olurdu.
+  const dogrulandi = sonuc?.durum === 'kesin';
 
   return (
     <div className={`rounded-xl border-l-4 px-3 py-2 ${ALINTI_RENKLERI[madde.tur]}`}>
@@ -51,7 +92,20 @@ export function AlintiKutusu({ madde, numara }) {
           {etiket.simge} {etiket.ad}
         </span>
         {madde.kaynakKunyesi ? <span>· {madde.kaynakKunyesi}</span> : null}
-        {madde.dogrulanmadi ? <Etiket renk="amber">doğrulanmadı</Etiket> : null}
+        <DogrulamaRozeti sonuc={sonuc} tur={madde.tur} />
+        {madde.dogrulanmadi && !dogrulandi ? (
+          <Etiket renk="amber">doğrulanmadı</Etiket>
+        ) : null}
+        {madde.tur === 'hadis' && arapca ? (
+          <a
+            href={hadisAramaBagi(madde.metin)}
+            target="_blank"
+            rel="noreferrer"
+            className="underline decoration-dotted underline-offset-2"
+          >
+            kaynakta ara ↗
+          </a>
+        ) : null}
       </p>
       <p
         dir={arapca ? 'rtl' : 'ltr'}

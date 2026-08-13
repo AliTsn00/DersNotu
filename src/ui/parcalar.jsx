@@ -42,6 +42,7 @@ export function Etiket({ children, renk = 'zinc' }) {
     indigo: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300',
     amber: 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300',
     emerald: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300',
+    rose: 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300',
   };
   return (
     <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${renkler[renk]}`}>

@@ -51,6 +51,20 @@ export default defineConfig({
         // günlerce göremeyebiliyor — önbellekteki eski paket sunulmaya devam eder.
         skipWaiting: true,
         clientsClaim: true,
+        // Kur'ân metni 1 MB: ön belleğe alınırsa herkes daha ilk açılışta
+        // indirir. İlk doğrulamada çekilip orada kalıyor — sonraki dersler
+        // çevrimdışı da doğrulanabiliyor.
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.endsWith('/kuran.json'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'kuran-metni',
+              expiration: { maxEntries: 1 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
     }),
   ],

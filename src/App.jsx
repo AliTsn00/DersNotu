@@ -11,6 +11,7 @@ import {
 } from './core/dinleme.js';
 import { sesiYaziyaCevir, CEVIRIM_SERVISLERI } from './core/kayitci.js';
 import { akilliNotCikar } from './core/zeka.js';
+import { alintilariDogrula } from './kuran/dogrula.js';
 import { ekraniAcikTut, ekranKilidiniBirak, ekranKilidiniIzle } from './core/ekran.js';
 import {
   VARSAYILAN_AYARLAR,
@@ -27,6 +28,7 @@ import {
 
 import KayitEkrani from './ui/KayitEkrani.jsx';
 import NotEkrani from './ui/NotEkrani.jsx';
+import { AyetSonuclariBaglami } from './ui/NotGovdesi.jsx';
 import ArsivEkrani from './ui/ArsivEkrani.jsx';
 import AyarEkrani from './ui/AyarEkrani.jsx';
 
@@ -101,6 +103,30 @@ export default function App() {
   }, [otomatikNot, elleNot]);
 
   const not = elleNot || otomatikNot;
+
+  // --- Âyet doğrulaması ----------------------------------------------------
+  // Nottaki Arapça alıntılar Kur'ân metniyle birebir karşılaştırılır. Metin
+  // 1 MB olduğu için açılışta değil, notta alıntı çıktığında yükleniyor.
+  const [ayetSonuclari, ayetSonuclariAyarla] = useState(new Map());
+
+  useEffect(() => {
+    let iptal = false;
+    const alintiVar =
+      (not?.ayetler?.length || 0) + (not?.hadisler?.length || 0) + (not?.dualar?.length || 0);
+    if (!alintiVar) {
+      ayetSonuclariAyarla(new Map());
+      return undefined;
+    }
+    alintilariDogrula(not, import.meta.env.BASE_URL)
+      .then((sonuclar) => {
+        if (!iptal) ayetSonuclariAyarla(sonuclar);
+      })
+      // Doğrulama yapılamaması notu bozmaz; alıntılar doğrulanmamış kalır.
+      .catch(() => {});
+    return () => {
+      iptal = true;
+    };
+  }, [not]);
 
   // --- Ayar kalıcılığı -----------------------------------------------------
   const ayarGuncelle = useCallback((yeni) => {
@@ -520,25 +546,27 @@ export default function App() {
         ) : null}
 
         {sekme === 'not' ? (
-          <NotEkrani
-            not={not}
-            detay={ayarlar.detay}
-            detayDegistir={(detay) => ayarGuncelle({ ...ayarlar, detay })}
-            kaydet={kaydet}
-            kayitliMi={Boolean(aktifId)}
-            duzenleniyor={duzenleniyor}
-            duzenlemeyiAc={duzenlemeyiAc}
-            duzenlemeyiKapat={() => duzenleniyorAyarla(false)}
-            otomatigeDon={otomatigeDon}
-            notuDegistir={elleNotAyarla}
-            akilliNotuCikar={akilliNotuCikar}
-            zekayiIptalEt={zekayiIptalEt}
-            zekaHazir={zekaHazir}
-            zekaCalisiyor={zekaCalisiyor}
-            zekaIlerleme={zekaIlerleme}
-            zekaHatasi={zekaHatasi}
-            zekaUyarilari={zekaUyarilari}
-          />
+          <AyetSonuclariBaglami.Provider value={ayetSonuclari}>
+            <NotEkrani
+              not={not}
+              detay={ayarlar.detay}
+              detayDegistir={(detay) => ayarGuncelle({ ...ayarlar, detay })}
+              kaydet={kaydet}
+              kayitliMi={Boolean(aktifId)}
+              duzenleniyor={duzenleniyor}
+              duzenlemeyiAc={duzenlemeyiAc}
+              duzenlemeyiKapat={() => duzenleniyorAyarla(false)}
+              otomatigeDon={otomatigeDon}
+              notuDegistir={elleNotAyarla}
+              akilliNotuCikar={akilliNotuCikar}
+              zekayiIptalEt={zekayiIptalEt}
+              zekaHazir={zekaHazir}
+              zekaCalisiyor={zekaCalisiyor}
+              zekaIlerleme={zekaIlerleme}
+              zekaHatasi={zekaHatasi}
+              zekaUyarilari={zekaUyarilari}
+            />
+          </AyetSonuclariBaglami.Provider>
         ) : null}
 
         {sekme === 'arsiv' ? (

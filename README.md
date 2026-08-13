@@ -59,6 +59,31 @@ ilgili alıntıya bağlanır, ve konuşma tanımanın küçük yazdığı özel 
 > başına teyit uyarısı konur. Notu paylaşmadan önce mushaftan ve güvenilir bir hadis
 > kaynağından kontrol edin.
 
+### Âyet doğrulaması
+
+Kur'ân kapalı ve değişmez bir metin olduğu için âyetler **birebir karşılaştırmayla**
+doğrulanabiliyor. Nottaki her Arapça ibare 6.236 âyetle karşılaştırılır:
+
+| Sonuç | Anlamı |
+| --- | --- |
+| ✓ **Kur'ân — Bakara 153** | İbare o âyette aynen geçiyor. Künye artık tahmin değil. |
+| ≈ **Bakara 153 (%86 benzer)** | Konuşma tanıma metni bozmuş olabilir; en yakın âyet bu. |
+| **Kur'ân'da bulunamadı** | Âyet olduğu söylenen ibare Kur'ân'da yok. |
+| **Latin harfli — karşılaştırılamadı** | Çeviri yazı; Arap harfi olmadan kıyas yapılamaz. |
+
+Metin [Tanzil.net](https://tanzil.net)'in denetlenmiş sürümüdür — gösterim için Uthmani
+(resmî imlâ), karşılaştırma için sade imlâ. İkisi ayrı olmak zorunda: Uthmani uzun elifi
+üst simgeyle yazıyor (`ٱلصَّٰبِرِينَ`), yaygın yazım elifle (`الصابرين`). Metin
+[Tanzil Quran Text License](https://tanzil.net/docs/text_license) ile kullanılır ve
+uygulama ona **hiçbir koşulda dokunmaz**. Veriyi yenilemek için:
+`node scripts/kuran-hazirla.mjs`
+
+**Hadîsler için böyle bir doğrulama yok ve olmayacak.** Kapalı bir külliyat, tek bir
+kanonik metin ve makine tarafından denetlenebilir bir sıhhat ölçütü bulunmuyor; "bu
+hadîs sahihtir" diyen bir kod yanlış güven verirdi. Onun yerine her hadîs kutusunda
+metni [sunnah.com](https://sunnah.com)'da aratan bir bağlantı var — teyit tek tıkla,
+ama insan eliyle.
+
 ## Örnek
 
 Girdi (gerçek konuşma tanıma çıktısı gibi, noktalamasız):
