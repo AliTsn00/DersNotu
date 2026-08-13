@@ -270,14 +270,16 @@ derste Groq'un Türkçe kalitesi ve Arapça ibarelerin çıktısı ölçülecek.
 
 ---
 
-### Aşama 2 — PWA'yı Groq'a bağla (2–4 saat) 🟢 ÇOK DÜŞÜK EFOR
+### Aşama 2 — PWA'yı Groq'a bağla ✅ TAMAMLANDI (13 Ağustos 2026)
 
-Skill masaüstü yolu; bu ise telefonda hızlı bakmak için.
-
-- [ ] Ayarlardaki ses çevirme kartına Groq ön ayarı ekle (`https://api.groq.com/openai/v1`, `whisper-large-v3`)
-- [ ] `sesiYaziyaCevir()`'e zaman aşımı, `AbortController` ve ilerleme göstergesi ekle (şu an hiçbiri yok)
-- [ ] 25 MB üstü dosyalarda kullanıcıyı uyar
-- [ ] İslami terim sözlüğünü `prompt` olarak gönder (sûre adları, hadis kaynakları — `sozluk.js`'ten üretilebilir)
+- [x] Servis ön ayarları — Ayarlar'da tek tıkla Groq ↔ OpenAI geçişi
+- [x] Varsayılan Groq `whisper-large-v3` oldu
+- [x] 10 dakikalık zaman aşımı + `AbortController` + İptal düğmesi
+- [x] Dosya boyutu istek gönderilmeden önce denetleniyor (25 MB)
+- [x] Duruma göre Türkçe hata mesajları (401 / 404 / 413 / 429 / 5xx)
+- [x] İslamî ders terimleri konuşma tanımaya bağlam ipucu olarak gidiyor
+- [x] Gizlilik metni gerçeğe uyduruldu
+- [x] Testler (57/57) ve üretim derlemesi geçiyor, tarayıcıda görsel doğrulama yapıldı
 
 **Çıktı:** Telefondan da ham transkript alabiliyorsunuz. Kaliteli not için PC'ye geçiyorsunuz.
 
@@ -296,7 +298,7 @@ Skill masaüstü yolu; bu ise telefonda hızlı bakmak için.
 ### Aşama 4 — Cilalama (isteğe bağlı)
 
 - [ ] Telefondan PC'ye dosya aktarımını kolaylaştır (Drive klasörü / USB / Web Share Target)
-- [ ] Ayarlardaki "metin hiçbir sunucuya gönderilmez" ifadesini güncelle — artık doğru değil
+- [x] ~~Ayarlardaki "metin hiçbir sunucuya gönderilmez" ifadesini güncelle~~ (Aşama 2'de yapıldı)
 - [ ] IndexedDB'ye sürüm alanı + migrasyon iskeleti (şu an yok, ileride başınızı ağrıtır)
 - [ ] Otomatik kaydetme — şu an sekmeyi kapatınca ham metin gidiyor
 - [ ] `kayitci.js`'teki ölü kodu temizle: `SesKaydedici` sınıfı yazılmış ama hiçbir yerden çağrılmıyor, `sesKaydet` ayarı hiç okunmuyor
