@@ -4,6 +4,10 @@
 // uygulama sürümünde cihazın kendi konuşma tanıma servisi kullanılır.
 // Arayüz `Dinleyici` ile birebir aynıdır, böylece uygulama tarafı değişmez.
 
+// Doğrudan içe aktarılır: tıklama anında ayrı bir parça indirmek zorunda
+// kalmamak için. Bu dosyanın kendisi zaten yalnızca uygulamada yükleniyor.
+import { SpeechRecognition } from '@capacitor-community/speech-recognition';
+
 const HATA_METINLERI = {
   denied: 'Mikrofon izni verilmedi. Uygulama ayarlarından izin verin.',
   unavailable: 'Bu cihazda konuşma tanıma servisi bulunamadı.',
@@ -27,10 +31,8 @@ export class YerliDinleyici {
   }
 
   async #eklentiGetir() {
-    if (!this.eklenti) {
-      const modul = await import('@capacitor-community/speech-recognition');
-      this.eklenti = modul.SpeechRecognition;
-    }
+    if (!SpeechRecognition) throw new Error('SpeechRecognition eklentisi bulunamadı');
+    this.eklenti = SpeechRecognition;
     return this.eklenti;
   }
 
