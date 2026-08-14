@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Ders Notu</string>
+    <string name="title_activity_main">Ders Notu</string>
+    <string name="package_name">com.alitsn.dersnotu</string>
+    <string name="custom_url_scheme">com.alitsn.dersnotu</string>
+</resources>

@@ -2,7 +2,7 @@
 // Çalıştırmak için: npm run gen:icons
 
 import { deflateSync } from 'node:zlib';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -139,3 +139,28 @@ writeFileSync(join(CIKTI, 'icon-192.png'), simgeUret(192));
 writeFileSync(join(CIKTI, 'icon-512.png'), simgeUret(512));
 writeFileSync(join(CIKTI, 'icon-maskable-512.png'), simgeUret(512, { maskable: true }));
 console.log('Simgeler üretildi: public/icon-192.png, icon-512.png, icon-maskable-512.png');
+
+// --- Android uygulama simgeleri ---------------------------------------------
+// Capacitor şablonu varsayılan Android simgesiyle gelir; onun yerine
+// uygulamanın kendi simgesi yazılır.
+const ANDROID_KOK = join(dirname(fileURLToPath(import.meta.url)), '..', 'android', 'app', 'src', 'main', 'res');
+const YOGUNLUKLAR = [
+  ['mipmap-mdpi', 48],
+  ['mipmap-hdpi', 72],
+  ['mipmap-xhdpi', 96],
+  ['mipmap-xxhdpi', 144],
+  ['mipmap-xxxhdpi', 192],
+];
+
+if (existsSync(ANDROID_KOK)) {
+  for (const [klasor, boyut] of YOGUNLUKLAR) {
+    const hedef = join(ANDROID_KOK, klasor);
+    mkdirSync(hedef, { recursive: true });
+    const simge = simgeUret(boyut);
+    writeFileSync(join(hedef, 'ic_launcher.png'), simge);
+    writeFileSync(join(hedef, 'ic_launcher_round.png'), simge);
+    // Uyarlanabilir simgenin ön planı: kenarlarda pay bırakan sürüm
+    writeFileSync(join(hedef, 'ic_launcher_foreground.png'), simgeUret(boyut, { maskable: true }));
+  }
+  console.log('Android simgeleri güncellendi.');
+}

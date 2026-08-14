@@ -1,0 +1,13 @@
+{
+  "appId": "com.alitsn.dersnotu",
+  "appName": "Ders Notu",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "SpeechRecognition": {
+      "language": "tr-TR"
+    }
+  }
+}

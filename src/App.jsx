@@ -2,7 +2,7 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } f
 
 import { notCikar } from './turkce/index.js';
 import { duzenlemeyeAl, yeniMaddeleriKat } from './turkce/duzenle.js';
-import { Dinleyici, konusmaTanimaVarMi } from './core/dinleme.js';
+import { dinleyiciOlustur, canliDinlemeVarMi, cerceveIcindeMi } from './core/platform.js';
 import { sesiYaziyaCevir } from './core/kayitci.js';
 import { ekraniAcikTut, ekranKilidiniBirak, ekranKilidiniIzle } from './core/ekran.js';
 import {
@@ -49,14 +49,12 @@ export default function App() {
 
   const dinleyiciRef = useRef(null);
   const baslangicRef = useRef(0);
-  const canliDestekli = useMemo(() => konusmaTanimaVarMi(), []);
+  const [canliDestekli, canliDestekliAyarla] = useState(true);
   // Çerçeve (iframe) içinde açıldığında tarayıcı mikrofon izni sormaz.
-  const cerceveIcinde = useMemo(() => {
-    try {
-      return window.self !== window.top;
-    } catch {
-      return true;
-    }
+  const cerceveIcinde = useMemo(() => cerceveIcindeMi(), []);
+
+  useEffect(() => {
+    canliDinlemeVarMi().then(canliDestekliAyarla);
   }, []);
 
   // --- Not üretimi ---------------------------------------------------------
@@ -126,9 +124,10 @@ export default function App() {
 
   useEffect(() => dinlemeyiDurdur, [dinlemeyiDurdur]);
 
-  const dinlemeyiBaslat = useCallback(() => {
+  const dinlemeyiBaslat = useCallback(async () => {
     hataAyarla('');
-    const dinleyici = new Dinleyici({
+    // Uygulamada cihazın konuşma tanıma servisi, tarayıcıda Web Speech API.
+    const dinleyici = await dinleyiciOlustur({
       dil: ayarlar.dil,
       onAra: araMetinAyarla,
       onKesin: (metin) => {
@@ -147,8 +146,11 @@ export default function App() {
       onHata: hataAyarla,
     });
 
-    if (!dinleyici.baslat()) return;
     dinleyiciRef.current = dinleyici;
+    if ((await dinleyici.baslat()) === false) {
+      dinleyiciRef.current = null;
+      return;
+    }
     if (!baslangicRef.current || !hamMetin) baslangicRef.current = Date.now() - sure * 1000;
     dinliyorAyarla(true);
   }, [ayarlar.dil, hamMetin, sure]);

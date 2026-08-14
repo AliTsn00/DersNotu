@@ -130,7 +130,44 @@ doğrudan tarayıcıdan servise gider.
 
 Mikrofonsuz denemek için **Kayıt → Metin → Örnek ders metnini dene**.
 
-## Telefona kurma
+## Android uygulaması (APK)
+
+Tarayıcı sürümü mikrofonu yalnızca kendi adresinde açıldığında kullanabilir;
+gömülü bir çerçevede ya da `file://` üzerinden çalışmaz. Telefonda bu dertlerle
+uğraşmamak için Capacitor ile paketlenmiş bir Android uygulaması vardır.
+
+Uygulama sürümünde canlı dinleme **cihazın kendi konuşma tanıma servisini**
+kullanır (`@capacitor-community/speech-recognition`) — Android WebView tarayıcının
+`SpeechRecognition` API'sini içermez. Mikrofon iznini Android'in kendisi sorar.
+
+APK, GitHub Actions'ta derlenir (çalıştırıcılarda Android SDK hazır gelir) ve
+sabit bir adrese yüklenir:
+
+```
+https://github.com/<kullanıcı>/<repo>/releases/download/apk/ders-notu.apk
+```
+
+Derlemeyi başlatmak için: **Actions → APK → Run workflow**.
+Telefonda bu adresi açıp indirin; Android "bilinmeyen kaynaktan kurulum" izni
+isteyecektir. APK hata ayıklama anahtarıyla imzalıdır — elden kurulum için
+yeterli, Play Store'a yüklenemez.
+
+Yerelde derlemek için Android SDK gerekir:
+
+```bash
+npm run build && npx cap sync android
+cd android && ./gradlew assembleDebug
+```
+
+### Bilinen sınır: arka planda çalışma
+
+Ekran kapandığında ya da uygulama arka plana atıldığında Android konuşma tanımayı
+durdurur. Ders boyunca kesintisiz kayıt için uygulamanın bildirim çubuğunda duran
+bir ön plan servisiyle sesi kendisinin kaydetmesi, tanımayı da ona göre yürütmesi
+gerekir; bu henüz yapılmadı. Şimdilik ekran açık kalmalıdır (Ayarlar → "Ekranı
+açık tut" varsayılan olarak açıktır).
+
+## Telefona kurma (tarayıcıdan, PWA olarak)
 
 Uygulama PWA'dır; ayrı bir mağaza sürümü gerekmez.
 
