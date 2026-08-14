@@ -1,7 +1,9 @@
 // Ders yakalama ekranı: canlı dinleme, ses dosyası veya metin yapıştırma.
 
+import { useState } from 'react';
 import { sureYaz } from '../turkce/bicim.js';
 import { ORNEK_DERSLER } from '../ornek.js';
+import { tanilamaTopla } from '../core/platform.js';
 import { Dugme, Kart, BosDurum, girdiSinifi } from './parcalar.jsx';
 
 const MODLAR = [
@@ -46,6 +48,52 @@ function KayitDugmesi({ dinliyor, onTikla, kapali }) {
         )}
       </svg>
     </button>
+  );
+}
+
+/** Mikrofon çalışmadığında nerede takıldığını gösterir. */
+function Tanilama() {
+  const [satirlar, satirlarAyarla] = useState(null);
+  const [yukleniyor, yukleniyorAyarla] = useState(false);
+
+  const calistir = async () => {
+    yukleniyorAyarla(true);
+    try {
+      satirlarAyarla(await tanilamaTopla());
+    } catch (sorun) {
+      satirlarAyarla({ hata: sorun?.message || String(sorun) });
+    } finally {
+      yukleniyorAyarla(false);
+    }
+  };
+
+  return (
+    <details className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <summary className="cursor-pointer font-medium text-zinc-700 dark:text-zinc-200">
+        Mikrofon çalışmıyor mu?
+      </summary>
+
+      <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+        Aşağıdaki düğme, dinlemenin hangi adımda takıldığını gösterir.
+      </p>
+
+      <Dugme cesit="sade" boyut="kucuk" onClick={calistir} className="mt-2">
+        {yukleniyor ? 'Kontrol ediliyor…' : 'Durumu kontrol et'}
+      </Dugme>
+
+      {satirlar ? (
+        <dl className="mt-3 space-y-1">
+          {Object.entries(satirlar).map(([anahtar, deger]) => (
+            <div key={anahtar} className="flex gap-2 text-xs">
+              <dt className="w-20 shrink-0 font-medium text-zinc-500 dark:text-zinc-400">
+                {anahtar}
+              </dt>
+              <dd className="break-words text-zinc-800 dark:text-zinc-100">{String(deger)}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+    </details>
   );
 }
 
@@ -149,6 +197,8 @@ export default function KayitEkrani({
           </p>
         </Kart>
       ) : null}
+
+      {mod === 'canli' ? <Tanilama /> : null}
 
       {mod === 'dosya' ? (
         <Kart className="space-y-3">

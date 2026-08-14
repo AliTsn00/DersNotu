@@ -57,6 +57,13 @@ export default function App() {
     canliDinlemeVarMi().then(canliDestekliAyarla);
   }, []);
 
+  // Yakalanamayan hataları da kullanıcıya göster.
+  useEffect(() => {
+    const isle = (olay) => hataAyarla(`Beklenmeyen hata: ${olay.detail}`);
+    document.addEventListener('uygulama-hatasi', isle);
+    return () => document.removeEventListener('uygulama-hatasi', isle);
+  }, []);
+
   // --- Not üretimi ---------------------------------------------------------
   // Konuşma sürerken her kelimede yeniden hesaplamamak için ertelenmiş değer.
   const ertelenmisMetin = useDeferredValue(hamMetin);
@@ -124,8 +131,7 @@ export default function App() {
 
   useEffect(() => dinlemeyiDurdur, [dinlemeyiDurdur]);
 
-  const dinlemeyiBaslat = useCallback(async () => {
-    hataAyarla('');
+  const dinlemeyiKur = useCallback(async () => {
     // Uygulamada cihazın konuşma tanıma servisi, tarayıcıda Web Speech API.
     const dinleyici = await dinleyiciOlustur({
       dil: ayarlar.dil,
@@ -154,6 +160,17 @@ export default function App() {
     if (!baslangicRef.current || !hamMetin) baslangicRef.current = Date.now() - sure * 1000;
     dinliyorAyarla(true);
   }, [ayarlar.dil, hamMetin, sure]);
+
+  const dinlemeyiBaslat = useCallback(async () => {
+    hataAyarla('');
+    try {
+      await dinlemeyiKur();
+    } catch (sorun) {
+      // Sessiz başarısızlık olmasın: her hata ekranda görünsün.
+      hataAyarla(`Dinleme başlatılamadı: ${sorun?.message || sorun}`);
+      dinliyorAyarla(false);
+    }
+  }, [dinlemeyiKur]);
 
   const baslatDurdur = useCallback(() => {
     if (dinliyor) {

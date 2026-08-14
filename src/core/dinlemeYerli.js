@@ -67,20 +67,36 @@ export class YerliDinleyici {
   }
 
   async baslat() {
-    const eklenti = await this.#eklentiGetir();
-
-    const { available } = await eklenti.available();
-    if (!available) {
-      this.onHata(HATA_METINLERI.unavailable);
+    let eklenti;
+    try {
+      eklenti = await this.#eklentiGetir();
+    } catch (sorun) {
+      this.onHata(`Konuşma tanıma eklentisi yüklenemedi: ${sorun.message}`);
       return false;
     }
 
-    let izin = await eklenti.checkPermissions();
-    if (izin.speechRecognition !== 'granted') {
-      izin = await eklenti.requestPermissions();
+    try {
+      const { available } = await eklenti.available();
+      if (!available) {
+        this.onHata(HATA_METINLERI.unavailable);
+        return false;
+      }
+    } catch (sorun) {
+      this.onHata(`Konuşma tanıma servisi sorgulanamadı: ${sorun.message}`);
+      return false;
     }
-    if (izin.speechRecognition !== 'granted') {
-      this.onHata(HATA_METINLERI.denied);
+
+    try {
+      let izin = await eklenti.checkPermissions();
+      if (izin.speechRecognition !== 'granted') {
+        izin = await eklenti.requestPermissions();
+      }
+      if (izin.speechRecognition !== 'granted') {
+        this.onHata(`${HATA_METINLERI.denied} (durum: ${izin.speechRecognition})`);
+        return false;
+      }
+    } catch (sorun) {
+      this.onHata(`Mikrofon izni istenemedi: ${sorun.message}`);
       return false;
     }
 
@@ -109,7 +125,8 @@ export class YerliDinleyici {
 
     this.dinleyiciler = [araDinleyici, durumDinleyici];
     await this.#oturumBaslat();
-    return true;
+    // İlk oturum açılamadıysa çağıran taraf kaydı başlatmış saymasın.
+    return this.calisiyor || Boolean(this.zamanlayici);
   }
 
   async durdur() {

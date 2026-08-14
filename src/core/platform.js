@@ -40,3 +40,59 @@ export async function canliDinlemeVarMi() {
   const { konusmaTanimaVarMi } = await import('./dinleme.js');
   return konusmaTanimaVarMi();
 }
+
+/**
+ * Tanılama: mikrofon çalışmadığında nerede takıldığını görmek için.
+ * Hiçbir adımda hata fırlatmaz; her satır ya sonucu ya da hatayı gösterir.
+ */
+export async function tanilamaTopla() {
+  const satirlar = {};
+
+  try {
+    satirlar.ortam = yerliMi() ? `uygulama (${Capacitor.getPlatform()})` : 'tarayıcı';
+  } catch (sorun) {
+    satirlar.ortam = `okunamadı: ${sorun.message}`;
+  }
+
+  if (!yerliMi()) {
+    satirlar.webSpeech =
+      typeof window !== 'undefined' &&
+      (window.SpeechRecognition || window.webkitSpeechRecognition)
+        ? 'var'
+        : 'yok';
+    satirlar.cerceve = cerceveIcindeMi() ? 'evet (mikrofon izni sorulmaz)' : 'hayır';
+    return satirlar;
+  }
+
+  let eklenti = null;
+  try {
+    ({ SpeechRecognition: eklenti } = await import('@capacitor-community/speech-recognition'));
+    satirlar.eklenti = 'yüklendi';
+  } catch (sorun) {
+    satirlar.eklenti = `yüklenemedi: ${sorun.message}`;
+    return satirlar;
+  }
+
+  try {
+    const { available } = await eklenti.available();
+    satirlar.servis = available ? 'var' : 'YOK (cihazda konuşma tanıma servisi bulunamadı)';
+  } catch (sorun) {
+    satirlar.servis = `hata: ${sorun.message}`;
+  }
+
+  try {
+    const izin = await eklenti.checkPermissions();
+    satirlar.izin = izin.speechRecognition;
+  } catch (sorun) {
+    satirlar.izin = `hata: ${sorun.message}`;
+  }
+
+  try {
+    const { listening } = await eklenti.isListening();
+    satirlar.dinliyor = listening ? 'evet' : 'hayır';
+  } catch (sorun) {
+    satirlar.dinliyor = `hata: ${sorun.message}`;
+  }
+
+  return satirlar;
+}
